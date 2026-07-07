@@ -10,7 +10,7 @@ import pandas as pd
 from datasets import load_dataset
 from sklearn.datasets import fetch_20newsgroups
 
-from functions.dataset import embed_texts, get_emb_dir
+from vmf_hac.functions.dataset import embed_texts, get_emb_dir
 
 
 class TextDatasets(Enum):

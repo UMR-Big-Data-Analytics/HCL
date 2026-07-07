@@ -4,9 +4,9 @@ import numpy as np
 from scipy.cluster.hierarchy import fcluster
 from sklearn.base import BaseEstimator, ClusterMixin
 
-from entity.cluster import Cluster
-from functions.norm import normalize
-from functions.vmf import spherical_ward_linkage, vmf_linkage
+from vmf_hac.entity.cluster import Cluster
+from vmf_hac.functions.norm import normalize
+from vmf_hac.functions.vmf import spherical_ward_linkage, vmf_linkage
 
 
 class VmfHAC(BaseEstimator, ClusterMixin):

@@ -6,7 +6,7 @@ from collections.abc import Sequence
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from definitions import DATA_DIR
+from vmf_hac.definitions import DATA_DIR
 
 
 def _get_embedding(emb_dir: str, model: str, texts: Sequence[str]) -> np.ndarray:
