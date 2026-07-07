@@ -4,9 +4,19 @@ import unicodedata
 from collections.abc import Sequence
 
 import numpy as np
+import torch.mps
 from sentence_transformers import SentenceTransformer
 
 from vmf_hac.definitions import DATA_DIR
+
+
+def _get_device():
+    if torch.cuda.is_available():
+        return "cuda"
+    elif torch.mps.is_available():
+        return "mps"
+    else:
+        return "cpu"
 
 
 def _get_embedding(emb_dir: str, model: str, texts: Sequence[str]) -> np.ndarray:
@@ -18,13 +28,39 @@ def _get_embedding(emb_dir: str, model: str, texts: Sequence[str]) -> np.ndarray
     return x
 
 
+def _prepare_texts(model_name: str, texts: Sequence[str]) -> list[str]:
+    """
+    Prepare texts according to the embedding model.
+
+    This helper is intended for symmetric tasks such as clustering.
+    """
+
+    # E5 models require the "passage:" prefix for document embeddings.
+    if model_name.startswith("intfloat/multilingual-e5"):
+        return [f"passage: {text}" for text in texts]
+
+    # All other models are used without prompts for clustering.
+    return list(texts)
+
+
 def embed_texts(model: str, texts: Sequence[str]) -> np.ndarray:
-    enc = SentenceTransformer(model)
+    enc = SentenceTransformer(
+        model,
+        device=_get_device(),
+        trust_remote_code=True,  # needed by several newer embedding models
+    )
+
+    prepared_texts = _prepare_texts(model, texts)
+
+    print(f"Encoding {len(texts)} texts...")
+
     # noinspection PyTypeChecker
     return enc.encode(
-        [f"query: {text}" for text in texts],  # intfloat/multilingual-e5-large was trained with "query: " prefix
+        prepared_texts,
         normalize_embeddings=True,
-        batch_size=64,
+        batch_size=32,
+        convert_to_numpy=True,
+        show_progress_bar=True
     )
 
 

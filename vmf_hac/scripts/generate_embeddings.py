@@ -19,6 +19,7 @@ def iterator() -> Generator[tuple[str, TextDatasets]]:
 
 
 def main() -> None:
+    logging.info("Generating embeddings")
     for model_id, dataset in tqdm(iterator()):
         DatasetManager(model_id).get(dataset)
     logging.info("Done")
