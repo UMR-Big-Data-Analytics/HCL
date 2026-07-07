@@ -1,0 +1,36 @@
+{
+  "models": [
+    "intfloat/multilingual-e5-large",
+    "Qwen/Qwen3-Embedding-8B",
+    "tencent/KaLM-Embedding-Gemma3-12B-2511",
+    "codefuse-ai/F2LLM-v2-14B",
+    "microsoft/harrier-oss-v1-27b"
+  ],
+  "datasets": [
+    "Uri-ka/ClusTREC-Covid",
+    "mteb/biorxiv-clustering-p2p",
+    "mteb/arxiv-clustering-p2p",
+    "mteb/llm-eval-banking77",
+    "slvnwhrl/blurbs-clustering-p2p",
+    "BASF-AI/WikipediaEasy10Clustering",
+    "BASF-AI/WikipediaMedium5Clustering",
+    "mehrzad-shahin/BuiltBench-clustering-p2p",
+    "mteb/WikiCitiesClustering",
+    "mteb/llm-eval-dbpedia_14",
+    "mteb/AlloProfClusteringP2P",
+    "clips/mteb-nl-opentender-cls-pr",
+    "mteb/llm-eval-twenty_newsgroups_v2",
+    "sklearn/20newsgroups",
+    "slvnwhrl/tenkgnad-clustering-p2p",
+    "mteb/LivedoorNewsClustering.v2",
+    "clips/mteb-nl-news-articles-cls",
+    "jinaai/big-patent-clustering",
+    "mteb/tweet_topic_single",
+    "mteb/emotion",
+    "GreenNode/stackexchange-clustering-vn",
+    "mteb/stackexchange-clustering",
+    "mteb/reddit-clustering",
+    "mteb/reddit-clustering-p2p",
+    "mteb/DigikalamagClustering"
+  ]
+}
