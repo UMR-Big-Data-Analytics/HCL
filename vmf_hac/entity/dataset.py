@@ -883,13 +883,17 @@ class DatasetManager:
     def __init__(self, encoding_model: str):
         self.encoding_model = encoding_model
 
-    _cache: ClassVar[dict[TextDatasets, TextDataset]] = {}
+    _cache: ClassVar[dict[tuple[TextDatasets, str], TextDataset]] = {}
 
     def get(self, dataset_id: TextDatasets) -> TextDataset:
-        if dataset_id not in self._cache:
+        cache_key = (dataset_id, self.encoding_model)
+        if cache_key not in self._cache:
             dataset = self._get_dataset(dataset_id, self.encoding_model)
-            self._cache[dataset_id] = dataset
-        return self._cache[dataset_id]
+            self._cache[cache_key] = dataset
+        return self._cache[cache_key]
+
+    def clear_cache(self):
+        self._cache.clear()
 
     @staticmethod
     def _get_dataset(dataset: TextDatasets, encoding_model: str) -> TextDataset:
@@ -898,7 +902,6 @@ class DatasetManager:
         if name == "sklearn/20newsgroups":
             return DatasetManager.get_20newsgroups_embedding(encoding_model)
         elif name in custom_datasets:
-            print(name)
             return DatasetManager.get_custom_dataset(dataset, encoding_model)
         else:
             return DatasetManager.get_mteb_clustering_data(name, encoding_model)

@@ -1,3 +1,5 @@
+import gc
+import logging
 import os
 import re
 import unicodedata
@@ -6,6 +8,7 @@ from collections.abc import Sequence
 import numpy as np
 import torch.mps
 from sentence_transformers import SentenceTransformer
+from transformers import BitsAndBytesConfig
 
 from vmf_hac.definitions import DATA_DIR
 
@@ -43,25 +46,69 @@ def _prepare_texts(model_name: str, texts: Sequence[str]) -> list[str]:
     return list(texts)
 
 
-def embed_texts(model: str, texts: Sequence[str]) -> np.ndarray:
+def _initial_batch_size(model_name: str) -> int:
+    name = model_name.lower()
+    # Conservative defaults for large embedding models
+    if any(x in name for x in ("27b", "14b", "12b", "8b")):
+        return 2
+    if "large" in name:
+        return 8
+    return 32
+
+
+def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
+    """
+    Encode texts with automatic OOM recovery by shrinking batch size.
+    Optional env override: EMBED_BATCH_SIZE
+    """
+    logger = logging.getLogger(__name__)
+    prepared_texts = _prepare_texts(encoding_model, texts)
+
+    # Allow manual override from env, otherwise use heuristic
+    batch_size = int(os.getenv("EMBED_BATCH_SIZE", _initial_batch_size(encoding_model)))
+
+    torch.cuda.empty_cache()
+
     enc = SentenceTransformer(
-        model,
-        device=_get_device(),
-        trust_remote_code=True,  # needed by several newer embedding models
+        encoding_model,
+        trust_remote_code=True,
+        device="cuda" if torch.cuda.is_available() else "cpu",
+        #model_kwargs={"device_map": "auto"},
+        model_kwargs={
+            "quantization_config": BitsAndBytesConfig(load_in_4bit=True)
+        },
+
     )
 
-    prepared_texts = _prepare_texts(model, texts)
+    while batch_size >= 1:
+        try:
+            logger.info(
+                "Encoding %d texts with model=%s batch_size=%d",
+                len(prepared_texts),
+                encoding_model,
+                batch_size,
+            )
+            return enc.encode_document(
+                prepared_texts,
+                batch_size=batch_size,
+                show_progress_bar=True,
+                convert_to_numpy=True,
+            )
+        except torch.OutOfMemoryError:
+            if not torch.cuda.is_available():
+                raise
+            logger.warning(
+                "CUDA OOM for model=%s batch_size=%d; retrying with smaller batch size",
+                encoding_model,
+                batch_size,
+            )
+            gc.collect()
+            torch.cuda.empty_cache()
+            if batch_size == 1:
+                raise
+            batch_size = max(1, batch_size // 2)
 
-    print(f"Encoding {len(texts)} texts...")
-
-    # noinspection PyTypeChecker
-    return enc.encode(
-        prepared_texts,
-        normalize_embeddings=True,
-        batch_size=32,
-        convert_to_numpy=True,
-        show_progress_bar=True
-    )
+    raise RuntimeError(f"Failed to encode texts for model={encoding_model}")
 
 
 def slugify(value: str, allow_unicode=False) -> str:
