@@ -10,7 +10,7 @@ def main():
         models = json.loads(f.read())["models"]
 
     for model in models:
-        SentenceTransformer(model)  # This will download the model if not already present
+        SentenceTransformer(model, trust_remote_code=True)  # This will download the model if not already present
 
 
 if __name__ == "__main__":
