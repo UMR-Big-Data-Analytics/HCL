@@ -30,7 +30,11 @@ def parse_args() -> argparse.Namespace:
         "--sbatch-args",
         nargs="*",
         default=[],
-        help="Extra arguments passed to sbatch (only used when --mode sbatch).",
+        help=(
+            "Extra arguments passed to sbatch (only used when --mode sbatch). "
+            "Supports either separate args (--sbatch-args --time=... --partition=...) "
+            "or a single quoted string."
+        ),
     )
     return parser.parse_args()
 
@@ -39,12 +43,21 @@ def build_job_command(model: str, dataset: str) -> list[str]:
     return [
         "uv",
         "run",
-        "vmf_hac/scripts/generate_embeddings",
+        "python",
+        "-m",
+        "vmf_hac.scripts.generate_embeddings",
         "--model",
         model,
         "--dataset",
         dataset,
     ]
+
+
+def normalize_sbatch_args(raw_args: list[str]) -> list[str]:
+    normalized: list[str] = []
+    for arg in raw_args:
+        normalized.extend(shlex.split(arg))
+    return normalized
 
 
 def run_direct() -> None:
@@ -67,9 +80,10 @@ def run_direct() -> None:
 
 
 def run_sbatch(args: argparse.Namespace) -> None:
+    sbatch_args = normalize_sbatch_args(args.sbatch_args)
     for model, dataset in iterator():
         job_cmd = build_job_command(model, dataset)
-        submit_cmd = ["sbatch", *args.sbatch_args, "--wrap", shlex.join(job_cmd)]
+        submit_cmd = ["sbatch", *sbatch_args, "--wrap", shlex.join(job_cmd)]
         subprocess.run(submit_cmd, check=True)
 
 
