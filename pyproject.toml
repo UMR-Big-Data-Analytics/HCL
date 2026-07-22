@@ -31,6 +31,7 @@ dependencies = [
 
 [project.scripts]
 generate-embeddings = "vmf_hac.scripts.generate_embeddings:main"
+submit-embedding-jobs = "vmf_hac.scripts.submit_embedding_jobs:main"
 
 [dependency-groups]
 dev = [
