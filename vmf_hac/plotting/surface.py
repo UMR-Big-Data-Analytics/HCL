@@ -3,6 +3,7 @@ from warnings import warn
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scienceplots  # noqa
 
 from vmf_hac.definitions import ROOT_DIR
 
@@ -17,6 +18,8 @@ def main():
     except:  # noqa
         warn("Warning: LaTeX not available. Using default matplotlib text rendering.", stacklevel=2)
     os.makedirs(ROOT_DIR / "results" / "plots", exist_ok=True)
+
+    plt.style.use("science")
 
     def lr(N_X: int, R_X: float, N_Y: int, R_Y: float, theta: float, gamma: float) -> float:
         cos_theta = np.cos(np.deg2rad(theta))
