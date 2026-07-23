@@ -21,6 +21,11 @@ class VmfHAC(BaseEstimator, ClusterMixin):
         self.should_normalize = should_normalize
 
     def fit(self, X: np.ndarray, y=None):
+        if y is not None:
+            raise ValueError("VmfHAC is an unsupervised clustering algorithm and does not support fitting with labels.")
+        # float16 can result in numerical overflows when using numpy.linalg.norm with high dimensional data
+        if X.dtype != np.float64:
+            X = X.astype(np.float64)
         self.linkage_matrix_ = vmf_hac(X, self.gamma, self.linkage_fn, self.should_normalize)
         return self
 
@@ -99,7 +104,7 @@ def vmf_hac(X: np.ndarray, gamma: float, linkage_fn="vmf", should_normalize=True
 
         for k in active:
             S_ab = merged.S + clusters[k].S
-            R_ab = float(np.linalg.norm(S_ab))
+            R_ab = np.linalg.norm(S_ab)
 
             if linkage_fn == "vmf":
                 c = vmf_linkage(merged.N, merged.R, clusters[k].N, clusters[k].R, merged.N + clusters[k].N, R_ab, gamma)

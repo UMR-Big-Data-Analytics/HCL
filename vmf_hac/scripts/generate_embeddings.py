@@ -1,24 +1,20 @@
 import argparse
 import gc
-import json
 import logging
 from collections.abc import Generator
 
 import torch
 from tqdm import tqdm
 
-from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.entity.dataset import DatasetFactory, DatasetManager, TextDatasets
+from vmf_hac.utils import get_config
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
 def iterator() -> Generator[tuple[str, TextDatasets]]:
-    config_path = ROOT_DIR / "config.json"
-    with config_path.open() as f:
-        config = json.load(f)
+    config = get_config()
     for model in config["models"]:
         for dataset_id in config["datasets"]:
             text_dataset = DatasetFactory.from_string(dataset_id)

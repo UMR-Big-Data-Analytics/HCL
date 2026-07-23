@@ -2,6 +2,10 @@ import numpy as np
 
 
 def vmf_score(N: int, R: float, gamma: float) -> float:
+    if 1.0 - (R / N) + gamma <= 0:
+        raise ValueError(
+            f"Invalid value for log: 1 - (R / N) + gamma = {1.0 - (R / N) + gamma}, |R| = {R} and |N| = {N} and |gamma| = {gamma}"
+        )
     return N * np.log(1.0 - (R / N) + gamma)
 
 

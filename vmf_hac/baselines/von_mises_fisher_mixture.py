@@ -337,7 +337,7 @@ def _init_centroids(X, k, init, random_state=None, x_squared_norms=None, init_si
         )
 
     if sp.issparse(centers):
-        centers = centers.toarray()
+        centers = centers.toarray()  # ty:ignore[unresolved-attribute]
 
     _validate_center_shape(X, k, centers)
     return centers
@@ -962,7 +962,7 @@ class VonMisesFisherMixture(BaseEstimator, ClusterMixin, TransformerMixin):
             else:
                 n = np.linalg.norm(X[ee, :])
 
-            if np.abs(n - 1.0) > 1e-4:
+            if np.abs(n - 1.0) > 1e-3:
                 raise ValueError(f"Data l2-norm must be 1, found {n}")
 
         return X
@@ -993,7 +993,10 @@ class VonMisesFisherMixture(BaseEstimator, ClusterMixin, TransformerMixin):
         Parameters
         ----------
         X : array-like or sparse matrix, shape=(n_samples, n_features)
+        y : not used
         """
+        if y is not None:
+            raise ValueError("y is not supported")
         if self.normalize:
             X = normalize(X)
 
@@ -1025,14 +1028,14 @@ class VonMisesFisherMixture(BaseEstimator, ClusterMixin, TransformerMixin):
 
         return self
 
-    def fit_predict(self, X, y=None):
+    def fit_predict(self, X, y=None, **kwargs):
         """Compute cluster centers and predict cluster index for each sample.
         Convenience method; equivalent to calling fit(X) followed by
         predict(X).
         """
         return self.fit(X).labels_
 
-    def fit_transform(self, X, y=None):
+    def fit_transform(self, X, y=None, **fit_params):
         """Compute clustering and transform X to cluster-distance space.
         Equivalent to fit(X).transform(X), but more efficiently implemented.
         """

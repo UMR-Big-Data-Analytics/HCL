@@ -73,11 +73,8 @@ def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
         encoding_model,
         trust_remote_code=True,
         device="cuda" if torch.cuda.is_available() else "cpu",
-        #model_kwargs={"device_map": "auto"},
-        model_kwargs={
-            "quantization_config": BitsAndBytesConfig(load_in_4bit=True)
-        },
-
+        # model_kwargs={"device_map": "auto"},
+        model_kwargs={"quantization_config": BitsAndBytesConfig(load_in_4bit=True)},
     )
 
     while batch_size >= 1:
@@ -93,7 +90,7 @@ def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
                 batch_size=batch_size,
                 show_progress_bar=True,
                 convert_to_numpy=True,
-            )
+            )  # ty:ignore[invalid-return-type]
         except torch.OutOfMemoryError:
             if not torch.cuda.is_available():
                 raise
