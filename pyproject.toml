@@ -35,6 +35,8 @@ dependencies = [
 [project.scripts]
 generate-embeddings = "vmf_hac.scripts.generate_embeddings:main"
 submit-embedding-jobs = "vmf_hac.scripts.submit_embedding_jobs:main"
+run-all-experiments = "vmf_hac.scripts.run_all:run_all_experiments"
+run-all-plots = "vmf_hac.scripts.run_all:run_all_plots"
 
 [dependency-groups]
 dev = [
