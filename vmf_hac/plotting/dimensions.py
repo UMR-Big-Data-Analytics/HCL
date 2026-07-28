@@ -8,6 +8,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 
 from vmf_hac.definitions import ROOT_DIR
+from vmf_hac.plotting.consts import categorical_palette
 
 CLUSTERER_LABELS = {
     "AgglomerativeClustering_average": "Average",
@@ -130,6 +131,7 @@ def main():
     df["clusterer_label"] = df["clusterer_name"].map(CLUSTERER_LABELS).fillna(df["clusterer_name"])
     clusterer_order = [name for name in CLUSTERER_LABELS if name in set(df["clusterer_name"].unique())]
     label_order = [CLUSTERER_LABELS[name] for name in clusterer_order]
+    clusterer_palette = categorical_palette(label_order)
 
     n_cols = 5
 
@@ -148,6 +150,7 @@ def main():
             y="v_measure",
             hue="clusterer_label",
             hue_order=label_order,
+            palette=clusterer_palette,
             marker="o",
             ax=ax,
         )
