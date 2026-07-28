@@ -1,4 +1,5 @@
 import time
+from warnings import warn
 
 import numpy as np
 from sklearn.metrics import (
@@ -46,12 +47,30 @@ def evaluate(
     v_measure = v_measure_score(labels_true_non_noise, labels_pred_non_noise)
     fowlkes_mallows = fowlkes_mallows_score(labels_true_non_noise, labels_pred_non_noise)
 
-    silhouette = silhouette_score(embeddings_non_noise, labels_pred_non_noise)
-    calinski_harabasz = calinski_harabasz_score(embeddings_non_noise, labels_pred_non_noise)
-    davies_bouldin = davies_bouldin_score(embeddings_non_noise, labels_pred_non_noise)
+    n_non_noise_samples = labels_pred_non_noise.shape[0]
+    n_pred_clusters = np.unique(labels_pred_non_noise).shape[0]
+
+    has_valid_structure = 2 <= n_pred_clusters < n_non_noise_samples
+    if not has_valid_structure:
+        warn(
+            (
+                "Internal clustering metrics undefined for "
+                f"{dataset_name}/{clusterer_name or clusterer.__class__.__name__}: "
+                f"n_clusters={n_pred_clusters}, n_samples={n_non_noise_samples}. "
+                "Setting silhouette/calinski_harabasz/davies_bouldin to NaN."
+            ),
+            stacklevel=2,
+        )
+        silhouette = float("nan")
+        calinski_harabasz = float("nan")
+        davies_bouldin = float("nan")
+    else:
+        silhouette = silhouette_score(embeddings_non_noise, labels_pred_non_noise)
+        calinski_harabasz = calinski_harabasz_score(embeddings_non_noise, labels_pred_non_noise)
+        davies_bouldin = davies_bouldin_score(embeddings_non_noise, labels_pred_non_noise)
 
     noise_fraction = float(noise_mask.sum()) / y_pred.shape[0]
-    n_clusters = np.unique(labels_pred_non_noise).shape[0]
+    n_clusters = n_pred_clusters
     n_true_clusters = np.unique(y).shape[0]
 
     return ExperimentResult(

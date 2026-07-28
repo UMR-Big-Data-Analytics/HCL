@@ -72,7 +72,7 @@ def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
     enc = SentenceTransformer(
         encoding_model,
         trust_remote_code=True,
-        device="cuda" if torch.cuda.is_available() else "cpu",
+        device=_get_device(),
         # model_kwargs={"device_map": "auto"},
         model_kwargs={"quantization_config": BitsAndBytesConfig(load_in_4bit=True)},
     )

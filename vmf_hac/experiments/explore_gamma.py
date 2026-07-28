@@ -1,4 +1,5 @@
 import os
+from multiprocessing.util import warn
 from typing import Any
 
 import numpy as np
@@ -24,8 +25,24 @@ def main():
     gammas = np.linspace(0.001, 1.0, 100).tolist()
     jobs = []
     for dataset_name in config["datasets"]:
+        if dataset_name == "mteb/arxiv-clustering-p2p":
+            continue
+        if dataset_name == "jinaai/big-patent-clustering":
+            continue
+        if dataset_name == "mteb/stackexchange-clustering":
+            continue
+        if dataset_name == "mteb/reddit-clustering-p2p":
+            continue
         dataset = DatasetManager("intfloat/multilingual-e5-large").get(DatasetFactory.from_string(dataset_name))
-        x, y = prepare_data(dataset.embeddings, dataset.labels, n=1000)
+        n = 0
+        while n < 10:
+            x, y = prepare_data(dataset.embeddings, dataset.labels, n=1000)
+            if np.unique(y).shape[0] > 1:
+                break
+            n += 1
+        if y is not None and np.unique(y).shape[0] == 1:
+            warn(f"Dataset {dataset_name} has only one class after sampling. Skipping.")
+            continue
         for gamma in gammas:
             jobs.append(run(x, y, gamma=gamma, dataset_name=dataset_name))
 
