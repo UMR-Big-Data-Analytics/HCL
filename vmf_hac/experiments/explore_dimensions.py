@@ -39,14 +39,6 @@ def main():
 
     for dataset_name in config["datasets"]:
         print(dataset_name)
-        if dataset_name == "mteb/arxiv-clustering-p2p":
-            continue
-        if dataset_name == "jinaai/big-patent-clustering":
-            continue
-        if dataset_name == "mteb/stackexchange-clustering":
-            continue
-        if dataset_name == "mteb/reddit-clustering-p2p":
-            continue
         dataset = DatasetManager(model_name).get(DatasetFactory.from_string(dataset_name))
         for split in range(n_splits):
             x, y = prepare_data(dataset.embeddings, dataset.labels, n=1000, seed=split)
