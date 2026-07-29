@@ -25,32 +25,44 @@ if __name__ == "__main__":
     dataset_order = DATASET_ORDER
     gamma_order = sorted(df["gamma"].unique().tolist())
     gamma_palette = categorical_palette(gamma_order)
-    fig, axes = plt.subplots(2, 2, figsize=(6, 5))
+    fig, axes = plt.subplots(2, 2, figsize=(4, 3.5))
     axes = axes.flatten()
     legend_handles = None
     legend_labels = None
 
     for ax, dataset_label in zip(axes, dataset_order, strict=False):
         dataset_df = df[df["dataset_name"] == dataset_label]
+        n_true_clusters = int(dataset_df.iloc[0]["n_true_clusters"])
+        linear_margin = max(2, round(0.3 * n_true_clusters))
+        second_linear_start_k = n_true_clusters + linear_margin
+        second_linear_scale = 0.35
+        dataset_df = dataset_df.copy()
+        dataset_df["k_plot"] = dataset_df["k"].map(
+            lambda k: (
+                k
+                if k <= second_linear_start_k  # noqa: B023
+                else second_linear_start_k + second_linear_scale * (k - second_linear_start_k)  # noqa: B023
+            )
+        )
         sns.lineplot(
             data=dataset_df,
-            x="k",
+            x="k_plot",
             y="ari_vmf",
             hue="gamma",
             hue_order=gamma_order,
             palette=gamma_palette,
-            marker="o",
+            # marker="o",
             ax=ax,
-            markersize=4,
+            # markersize=4,
         )
 
-        ward_df = dataset_df[["k", "ari_ward"]].drop_duplicates().sort_values("k")
-        ax.plot(ward_df["k"], ward_df["ari_ward"], color="black", linestyle="--", label="Ward")
+        ward_df = dataset_df[["k_plot", "ari_ward"]].drop_duplicates().sort_values("k_plot")
+        ax.plot(ward_df["k_plot"], ward_df["ari_ward"], color="black", linestyle="--", label="Ward")
 
-        n_true_clusters = int(dataset_df.iloc[0]["n_true_clusters"])
-        ax.axvline(n_true_clusters, color="red", linestyle="--")
-        ax.set_title(dataset_label)
-        ax.set_xlabel("Number of clusters")
+        ax.axvline(n_true_clusters, color="red", linestyle="--", alpha=0.9)
+        ax.axvline(second_linear_start_k, color="grey", linestyle="--", alpha=0.25)
+        ax.set_title(dataset_label, fontsize=10)
+        ax.set_xlabel("$k$")
         ax.set_ylabel("ARI")
         handles, labels = ax.get_legend_handles_labels()
         if legend_handles is None and labels:
@@ -64,7 +76,7 @@ if __name__ == "__main__":
             legend_handles,
             legend_labels,
             loc="lower center",
-            bbox_to_anchor=(0.5, -0.01),
+            bbox_to_anchor=(0.5, -0.02),
             ncol=3,
             frameon=False,
         )

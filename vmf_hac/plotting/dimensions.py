@@ -151,7 +151,7 @@ def main():
             hue="clusterer_label",
             hue_order=label_order,
             palette=clusterer_palette,
-            marker="o",
+            # marker="o",
             ax=ax,
         )
         ax.set_title(str(dataset), fontsize=10)

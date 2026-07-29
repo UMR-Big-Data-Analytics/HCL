@@ -87,7 +87,7 @@ def main():
     dfs = []
     for _, dataset_label in datasets:
         x, y = dataset_data[dataset_label]
-        max_k = int(np.unique(y).shape[0] * 1.5)
+        max_k = max(300, int(np.unique(y).shape[0] * 1.5))
         dfs.append(
             compute_tree_trajectory(
                 x=x,

@@ -34,11 +34,10 @@ def main():
     config = get_config()
     jobs = []
     model_name = "intfloat/multilingual-e5-large"
-    n_splits = 1
-    reduction_factors = np.linspace(0.1, 1.0, 10).tolist()
+    n_splits = 5
+    reduction_factors = np.linspace(0.1, 1.0, 100).tolist()
 
     for dataset_name in config["datasets"]:
-        print(dataset_name)
         dataset = DatasetManager(model_name).get(DatasetFactory.from_string(dataset_name))
         for split in range(n_splits):
             x, y = prepare_data(dataset.embeddings, dataset.labels, n=1000, seed=split)

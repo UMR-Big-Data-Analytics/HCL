@@ -4,7 +4,7 @@ from vmf_hac import VmfHAC
 from vmf_hac.baselines import SphericalKMeans, VonMisesFisherMixture
 
 METHODS = [
-    ("VmfHAC", lambda n_clusters: VmfHAC(n_clusters=n_clusters, gamma=0.05)),
+    ("VmfHAC", lambda n_clusters: VmfHAC(n_clusters=n_clusters, gamma=0.075)),
     (
         "Ward",
         lambda n_clusters: AgglomerativeClustering(
