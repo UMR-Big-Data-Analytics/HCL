@@ -1,5 +1,5 @@
 import os
-from warnings import warn
+from math import ceil
 
 import numpy as np
 import pandas as pd
@@ -8,7 +8,14 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 
 from vmf_hac.definitions import ROOT_DIR
-from vmf_hac.plotting.consts import categorical_palette
+from vmf_hac.plotting.consts import (
+    DATASET_NAME_MAP,
+    categorical_palette,
+    figure_size,
+    page_aspect_limit,
+    save_figure,
+    setup_publication_style,
+)
 
 CLUSTERER_LABELS = {
     "AgglomerativeClustering_average": "Average",
@@ -21,6 +28,24 @@ CLUSTERER_LABELS = {
     "VmfHAC": "vMF-HAC",
     "VonMisesFisherMixture_soft": "moVMF",
 }
+
+
+MAX_TITLE_CHARS = 22
+_DATASET_SUFFIXES = ("-clustering-p2p", "-clustering-vn", "-clustering", "Clustering", "-cls-pr", "-cls")
+
+
+def _short_dataset_label(dataset_name: str) -> str:
+    """Panel title that fits into half a text column."""
+    if dataset_name in DATASET_NAME_MAP:
+        return DATASET_NAME_MAP[dataset_name]
+    label = dataset_name.split("/")[-1]
+    for suffix in _DATASET_SUFFIXES:
+        if label.endswith(suffix):
+            label = label[: -len(suffix)]
+            break
+    if len(label) > MAX_TITLE_CHARS:
+        label = label[: MAX_TITLE_CHARS - 1] + "..."
+    return label
 
 
 def _latex_escape(value: str) -> str:
@@ -75,11 +100,11 @@ def _style_top3_latex(table: pd.DataFrame) -> str:
             rank = row_ranks.loc[col]
             value = formatted.loc[idx, col]
             if rank == 1:
-                formatted.loc[idx, col] = f"\\textbf{{{value}}}"
+                formatted.loc[idx, col] = f"\\textbf{{\\uline{{{value}}}}}"
             elif rank == 2:
-                formatted.loc[idx, col] = f"\\underline{{{value}}}"
+                formatted.loc[idx, col] = f"\\textbf{{\\dashuline{{{value}}}}}"
             elif rank == 3:
-                formatted.loc[idx, col] = f"\\texttt{{{value}}}"
+                formatted.loc[idx, col] = f"\\textbf{{\\dotuline{{{value}}}}}"
 
     escaped_columns = [_latex_escape(str(col)) for col in formatted.columns]
     formatted.columns = escaped_columns
@@ -92,16 +117,7 @@ def _style_top3_latex(table: pd.DataFrame) -> str:
 
 
 def main():
-    try:
-        plt.rcParams.update(
-            {
-                "text.usetex": True,
-            }
-        )
-    except:  # noqa
-        warn("Warning: LaTeX not available. Using default matplotlib text rendering.", stacklevel=2)
-
-    plt.style.use("science")
+    setup_publication_style()
     os.makedirs(ROOT_DIR / "results" / "plots", exist_ok=True)
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_dimensions.csv")
     df = (
@@ -133,17 +149,21 @@ def main():
     label_order = [CLUSTERER_LABELS[name] for name in clusterer_order]
     clusterer_palette = categorical_palette(label_order)
 
-    n_cols = 5
-
     n_datasets = df["dataset_name"].unique().shape[0]
-    rows, cols = (n_datasets // n_cols) + 1, n_cols
-    fig, axes = plt.subplots(rows, cols, figsize=(2.5 * cols, 2.5 * rows), sharey=False)
-    axes = axes.flatten()
+    cols = min(2, n_datasets)
+    rows = ceil(n_datasets / cols)
+    aspect = min(rows / cols, page_aspect_limit(columns=1))
+    fig = plt.figure(figsize=figure_size(columns=1, aspect=aspect), layout="constrained")
+    axes = fig.subplots(rows, cols, sharex=True, sharey=True)
+    if not isinstance(axes, np.ndarray):
+        axes = np.array([axes])
+    axes = axes.reshape(rows, cols)
     legend_handles = None
     legend_labels = None
 
     for i, (dataset, frame) in enumerate(df.groupby("dataset_name")):
-        ax = axes[i]
+        row, col = divmod(i, cols)
+        ax = axes[row, col]
         sns.lineplot(
             data=frame,
             x="reduction_factor",
@@ -151,13 +171,12 @@ def main():
             hue="clusterer_label",
             hue_order=label_order,
             palette=clusterer_palette,
-            # marker="o",
             ax=ax,
         )
-        ax.set_title(str(dataset), fontsize=10)
+        ax.set_title(_short_dataset_label(str(dataset)))
         ax.grid(True, alpha=0.3)
-        ax.set_ylabel("V-Measure")
-        ax.set_xlabel("$\\alpha$")
+        ax.set_xlabel("")
+        ax.set_ylabel("")
         handles, labels = ax.get_legend_handles_labels()
         if legend_handles is None and labels:
             legend_handles = handles
@@ -165,21 +184,31 @@ def main():
         if ax.get_legend() is not None:
             ax.get_legend().remove()
 
-    for j in range(i + 1, len(axes)):
-        axes[j].set_visible(False)
+    n_plotted = i + 1
+    for j in range(n_plotted, rows * cols):
+        row, col = divmod(j, cols)
+        axes[row, col].set_visible(False)
+
+    # sharex hides the tick labels of every axis but the last row, which can be partly empty.
+    for col in range(cols):
+        last_row = max(row for row in range(rows) if row * cols + col < n_plotted)
+        ax = axes[last_row, col]
+        ax.tick_params(labelbottom=True)
+        ax.set_xlabel("$\\alpha$")
+        ax.xaxis.label.set_visible(True)
+
+    fig.supylabel("V-Measure")
 
     if legend_handles and legend_labels:
         fig.legend(
             legend_handles,
             legend_labels,
-            loc="lower center",
-            bbox_to_anchor=(0.5, -0.01),
-            ncol=3,
+            loc="outside lower center",
+            ncol=min(len(legend_labels), 3),
             frameon=False,
         )
 
-    fig.tight_layout(rect=(0, 0.08, 1, 1))
-    plt.savefig(ROOT_DIR / "results" / "plots" / "dimensions.pdf", bbox_inches="tight", dpi=300)
+    save_figure(fig, ROOT_DIR / "results" / "plots" / "dimensions.pdf")
 
     os.makedirs(ROOT_DIR / "results" / "tables", exist_ok=True)
     auc_table = _compute_v_measure_auc_table(df)

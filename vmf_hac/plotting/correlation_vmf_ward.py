@@ -1,5 +1,3 @@
-from warnings import warn
-
 import pandas as pd
 import scienceplots  # noqa
 import seaborn as sns
@@ -7,23 +5,23 @@ from matplotlib import pyplot as plt
 
 from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.entity.dataset import TextDatasets
-from vmf_hac.plotting.consts import DATASET_NAME_MAP, DATASET_ORDER, DATASET_PALETTE
+from vmf_hac.plotting.consts import (
+    DATASET_NAME_MAP,
+    DATASET_ORDER,
+    DATASET_PALETTE,
+    figure_size,
+    save_figure,
+    setup_publication_style,
+)
 
 
 def main():
-    try:
-        plt.rcParams.update(
-            {
-                "text.usetex": True,
-            }
-        )
-    except:  # noqa
-        warn("Warning: LaTeX not available. Using default matplotlib text rendering.", stacklevel=2)
+    setup_publication_style()
     n_markers = 20
     datasets = [
-        TextDatasets.BANKING77,
+        TextDatasets.BUILT_BENCH_CLUSTERING_P2P,
         TextDatasets.DBPEDIA_14,
-        TextDatasets.TWENTY_NEWSGROUPS,
+        TextDatasets.CLUSTREC_COVID,
         TextDatasets.WIKICITIES,
     ]
     dataset_names = [dataset.value.__str__() for dataset in datasets]
@@ -37,8 +35,6 @@ def main():
         new_gammas.append(gammas[int(i * len(gammas) / n_markers)])
     df_mean = df_mean[df_mean["gamma"].isin(new_gammas)]
 
-    plt.style.use(["science"])
-
     plot_df = df_mean[df_mean["gamma"] <= 1].copy()
 
     plot_df["dataset_label"] = plot_df["dataset_name"].map(DATASET_NAME_MAP)
@@ -47,7 +43,7 @@ def main():
     marker_map = {lab: marker_cycle[i % len(marker_cycle)] for i, lab in enumerate(labels)}
     palette = {label: DATASET_PALETTE[label] for label in labels}
 
-    fig, ax = plt.subplots(figsize=(3, 3))
+    fig, ax = plt.subplots(figsize=figure_size(columns=1, aspect=0.8), layout="constrained")
 
     sns.scatterplot(
         data=plot_df,
@@ -58,25 +54,28 @@ def main():
         style="dataset_label",
         markers=marker_map,
         palette=palette,
-        s=45,
+        s=18,
         edgecolor="none",
         ax=ax,
     )
 
     ax.set_xlabel(r"$\gamma$")
-    ax.set_ylabel("Correlation")
-    ax.legend(
-        loc="upper center",
-        bbox_to_anchor=(0.4, -0.15),
+    ax.set_ylabel("Cophenetic correlation")
+    handles, legend_labels = ax.get_legend_handles_labels()
+    if ax.get_legend() is not None:
+        ax.get_legend().remove()  # ty:ignore[unresolved-attribute]
+    fig.legend(
+        handles,
+        legend_labels,
+        loc="outside lower center",
         ncol=2,
         frameon=False,
     )
-    fig.tight_layout()
-    fig.savefig(ROOT_DIR / "results" / "plots" / "pearson_corr_gamma.pdf", bbox_inches="tight")
+    save_figure(fig, ROOT_DIR / "results" / "plots" / "pearson_corr_gamma.pdf")
 
     plt.close(fig)
 
-    fig, ax = plt.subplots(figsize=(3, 3))
+    fig, ax = plt.subplots(figsize=figure_size(columns=1, aspect=0.8), layout="constrained")
     sns.lineplot(
         data=plot_df,
         x="gamma",
@@ -93,10 +92,17 @@ def main():
     ward_skew_per_dataset = plot_df.groupby("dataset_label")["ward_cluster_skew"].mean()
     for dataset_label, ward_skew in ward_skew_per_dataset.items():
         ax.axhline(y=ward_skew, color=palette[dataset_label], linestyle="--", linewidth=1)  # ty:ignore[invalid-argument-type]
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig(ROOT_DIR / "results" / "plots" / "skewness_gamma.pdf", bbox_inches="tight")
-
+    handles, legend_labels = ax.get_legend_handles_labels()
+    if ax.get_legend() is not None:
+        ax.get_legend().remove()  # ty:ignore[unresolved-attribute]
+    fig.legend(
+        handles,
+        legend_labels,
+        loc="outside lower center",
+        ncol=2,
+        frameon=False,
+    )
+    save_figure(fig, ROOT_DIR / "results" / "plots" / "skewness_gamma.pdf")
     plt.close(fig)
 
 

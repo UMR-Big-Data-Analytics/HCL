@@ -10,7 +10,6 @@ from vmf_hac import VmfHAC
 from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.entity import DatasetManager
 from vmf_hac.entity.dataset import TextDatasets
-from vmf_hac.utils.data import random_subset
 from vmf_hac.utils.parallel import gather, task
 
 
@@ -27,14 +26,12 @@ def compute_tree_trajectory(
     max_k: int,
     vmfs: dict[float, VmfHAC],
 ) -> pd.DataFrame:
-    n_samples = x.shape[0]
     x_norm = x / np.linalg.norm(x, axis=1, keepdims=True)
     z_ward = ward(pdist(x_norm))
-    k_values = np.linspace(2, min(max_k, n_samples // 2), 50).astype(int)[::-1]
     n_true_clusters = np.unique(y_true).shape[0]
 
     rows = []
-    for k in k_values:
+    for k in range(max_k):
         labels_ward = fcluster(z_ward, t=k, criterion="maxclust")
         ari_ward = adjusted_rand_score(y_true, labels_ward)
         v_measure_ward = v_measure_score(y_true, labels_ward)
@@ -57,11 +54,11 @@ def compute_tree_trajectory(
 
 def main():
     model_name = "intfloat/multilingual-e5-large"
-    gammas = [0.025, 0.05, 0.075, 0.1]
+    gammas = [0.01, 0.025, 0.05, 0.075, 0.1]
     datasets = [
         (TextDatasets.DBPEDIA_14, "DBPedia"),
-        (TextDatasets.BANKING77, "Banking77"),
-        (TextDatasets.TWENTY_NEWSGROUPS, "20Newsgroups"),
+        (TextDatasets.BUILT_BENCH_CLUSTERING_P2P, "BuiltBenchP2P"),
+        (TextDatasets.CLUSTREC_COVID, "ClusTREC-Covid"),
         (TextDatasets.WIKICITIES, "WikiCities"),
     ]
 
@@ -69,7 +66,8 @@ def main():
     dataset_data: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     for dataset_key, dataset_label in datasets:
         dataset = manager.get(dataset_key)
-        x, y = random_subset(dataset.embeddings, dataset.labels, n=1000, seed=42)
+        x, y = dataset.embeddings, dataset.labels
+        # x, y = random_subset(dataset.embeddings, dataset.labels, n=1000, seed=42)
         dataset_data[dataset_label] = (x, y)
 
     vmf_results = gather(
@@ -87,7 +85,7 @@ def main():
     dfs = []
     for _, dataset_label in datasets:
         x, y = dataset_data[dataset_label]
-        max_k = max(300, int(np.unique(y).shape[0] * 1.5))
+        max_k = 2400
         dfs.append(
             compute_tree_trajectory(
                 x=x,

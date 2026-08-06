@@ -10,7 +10,7 @@ import pandas as pd
 from datasets import load_dataset
 from sklearn.datasets import fetch_20newsgroups
 
-from vmf_hac.functions.dataset import embed_texts, get_emb_dir
+from vmf_hac.functions.dataset import embed_texts, ensure_valid_embeddings, get_emb_dir
 
 
 class TextDatasets(Enum):
@@ -834,7 +834,8 @@ class TextDataset:
         emb_dir = get_emb_dir(self.name, self.encoding_model)
         if not os.path.exists(emb_dir):
             os.makedirs(emb_dir)
-        np.save(os.path.join(emb_dir, "embeddings.npy"), self.embeddings)
+        embeddings = ensure_valid_embeddings(self.embeddings, source=f"{self.name}/{self.encoding_model}")
+        np.save(os.path.join(emb_dir, "embeddings.npy"), embeddings)
         df = pd.DataFrame()
         df["text"] = self.texts
         df["label"] = self.labels
@@ -855,6 +856,7 @@ class TextDataset:
         with open(f"{emb_dir}/metadata.json") as f:
             metadata = json.load(f)
         embeddings = np.load(os.path.join(emb_dir, "embeddings.npy"))
+        embeddings = ensure_valid_embeddings(embeddings, source=f"cached embeddings in {emb_dir}")
         df = pd.read_parquet(os.path.join(emb_dir, "data.parquet"))
         texts = df["text"].tolist()
         labels = df["label"].values

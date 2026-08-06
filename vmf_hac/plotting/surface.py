@@ -1,25 +1,76 @@
 import os
-from warnings import warn
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scienceplots  # noqa
 
 from vmf_hac.definitions import ROOT_DIR
+from vmf_hac.plotting.consts import (
+    PT_PER_INCH,
+    figure_size,
+    figure_width_pt,
+    save_figure,
+    setup_publication_style,
+)
+
+
+def _square_panel_figsize(
+    rows: int,
+    cols: int,
+    *,
+    columns: int,
+    decoration_in: float = 0.0,
+    sidebar_in: float = 0.0,
+):
+    """Starting figure size for a rows x cols grid of square panels spanning ``columns`` columns.
+
+    ``sidebar_in`` is the horizontal space taken by the y axis labels and ``decoration_in``
+    the vertical space taken by titles, x labels and the colorbar. The height only has to be
+    generous enough for the panels to be limited by the figure width; the surplus is removed
+    afterwards by :func:`_fit_square_grid_height`.
+    """
+    width_in = figure_width_pt(columns) / PT_PER_INCH
+    panel_in = (width_in - sidebar_in) / cols
+    aspect = (rows * panel_in + decoration_in) / width_in
+    return figure_size(columns=columns, aspect=aspect)
+
+
+def _fit_square_grid_height(fig, axes, *, tol_in: float = 0.001, iterations: int = 14) -> None:
+    """Trim the figure height to the smallest value that keeps the panels at full size.
+
+    The figure is created with a deliberately generous height so the square panels are
+    limited by the (fixed) figure width. The surplus height would otherwise be spent as
+    whitespace between the rows, so it is removed by a bisection on the figure height that
+    also makes sure nothing (titles, labels, colorbar) is pushed outside the canvas.
+    """
+    grid = np.atleast_2d(np.asarray(axes, dtype=object))
+
+    def measure() -> tuple[float, bool]:
+        fig.canvas.draw()
+        panel_in = min(ax.get_window_extent().height for ax in grid.flat) / fig.dpi
+        bbox = fig.get_tightbbox()
+        inside = bbox.y0 >= -tol_in and bbox.y1 <= fig.get_figheight() + tol_in
+        return panel_in, inside
+
+    target, _ = measure()
+    lo, hi = 0.0, fig.get_figheight()
+    for _ in range(iterations):
+        mid = 0.5 * (lo + hi)
+        fig.set_figheight(mid)
+        panel_in, inside = measure()
+        if inside and panel_in >= target - tol_in:
+            hi = mid
+        else:
+            lo = mid
+        if hi - lo < tol_in:
+            break
+    fig.set_figheight(hi)
+    fig.canvas.draw()
 
 
 def main():
-    try:
-        plt.rcParams.update(
-            {
-                "text.usetex": True,
-            }
-        )
-    except:  # noqa
-        warn("Warning: LaTeX not available. Using default matplotlib text rendering.", stacklevel=2)
+    setup_publication_style()
     os.makedirs(ROOT_DIR / "results" / "plots", exist_ok=True)
-
-    plt.style.use("science")
 
     def lr(N_X: int, R_X: float, N_Y: int, R_Y: float, theta: float, gamma: float) -> float:
         cos_theta = np.cos(np.deg2rad(theta))
@@ -45,7 +96,12 @@ def main():
     X, Y = np.meshgrid(theta_AB_vals, theta_AC_vals)
 
     fig, axes = plt.subplots(
-        len(R_bars_B), len(gammas), figsize=(3 * len(gammas) + 1, 3 * len(R_bars_B)), sharex=True, sharey=True
+        len(R_bars_B),
+        len(gammas),
+        figsize=_square_panel_figsize(len(R_bars_B), len(gammas), columns=2, decoration_in=1.6, sidebar_in=0.55),
+        sharex=True,
+        sharey=True,
+        layout="constrained",
     )
 
     for i, R_bar_B in enumerate(R_bars_B):
@@ -84,16 +140,24 @@ def main():
             if j == 0:
                 ax.set_ylabel(f"$\\bar{{R}}_B = {R_bar_B}$\n$\\theta_{{AC}}$")
             if i == len(R_bars_B) - 1:
-                ax.set_xlabel("$\\theta_{{AB}}$")
+                ax.set_xlabel("$\\theta_{AB}$")
             ax.set_xticks([0, 45, 90, 135, 180])
             ax.set_yticks([0, 45, 90, 135, 180])
+            ax.set_box_aspect(1)
 
-    cbar_ax = fig.add_axes([0.15, -0.05, 0.7, 0.03])  # ty:ignore[no-matching-overload]
-    cbar = fig.colorbar(im, cax=cbar_ax, orientation="horizontal")
-    # cbar.set_label('$\\leftarrow$ Merge (A,B)$\\quad$ |$\\quad lr(A,B) - lr(A,C)\\quad$ |$\\quad$ Merge (A,C) $\\rightarrow$', fontsize=12)
-    cbar.set_label("$\\Delta=\\mathrm{LR}(A,B) - \\mathrm{LR}(A,C)$", fontsize=12)
-    fig.subplots_adjust(bottom=0.05)
-    plt.savefig(ROOT_DIR / "results" / "plots" / "LR_surface_N_B_10.pdf", bbox_inches="tight", dpi=300)
+    cbar = fig.colorbar(
+        im,
+        ax=axes,
+        orientation="horizontal",
+        location="bottom",
+        fraction=0.04,
+        pad=0.06,
+        aspect=45,
+    )
+    cbar.set_label("$\\Delta=\\mathrm{LR}(A,B) - \\mathrm{LR}(A,C)$")
+    # _fit_square_grid_height(fig, axes)
+    save_figure(fig, ROOT_DIR / "results" / "plots" / "LR_surface_N_B_10.pdf")
+    plt.close(fig)
 
     # Fixed properties for A and C
     N_A, R_A = 10, 8.0  # R_bar = 0.8
@@ -109,7 +173,12 @@ def main():
     X, Y = np.meshgrid(theta_AB_vals, theta_AC_vals)
 
     fig, axes = plt.subplots(
-        len(R_bars_B), len(N_Bs), figsize=(2 * len(N_Bs), 2 * len(R_bars_B) + 0.4), sharex=True, sharey=True
+        len(R_bars_B),
+        len(N_Bs),
+        figsize=_square_panel_figsize(len(R_bars_B), len(N_Bs), columns=1, decoration_in=1.6, sidebar_in=0.45),
+        sharex=True,
+        sharey=True,
+        layout="constrained",
     )
 
     for i, R_bar_B in enumerate(R_bars_B):
@@ -149,19 +218,28 @@ def main():
             if i == 0:
                 ax.set_title(f"$N_B = {N_B}$")
             if j == 0:
-                ax.set_ylabel(f"$\\bar{{R}}_B = {R_bar_B}$\n$\\theta_{{AC}}$")
-            if i == len(R_bars_B) - 1:
-                ax.set_xlabel("$\\theta_{{AB}}$")
-            ax.set_xticks([0, 45, 90, 135, 180])
-            ax.set_yticks([0, 45, 90, 135, 180])
+                ax.set_ylabel("$\\theta_{AC}$")
+            ax.set_xticks([0, 90, 180])
+            ax.set_yticks([0, 90, 180])
+            ax.set_box_aspect(1)
 
-    cbar_ax = fig.add_axes([0.15, -0.05, 0.7, 0.03])  # ty:ignore[no-matching-overload]
-    cbar = fig.colorbar(im, cax=cbar_ax, orientation="horizontal")
-    # cbar.set_label('$\\leftarrow$ Merge (A,B)$\\quad$ |$\\quad lr(A,B) - lr(A,C)\\quad$ |$\\quad$ Merge (A,C) $\\rightarrow$', fontsize=12)
-    cbar.set_label("$\\Delta=\\mathrm{LR}(A,B) - \\mathrm{LR}(A,C)$", fontsize=12)
-
-    plt.tight_layout()
-    plt.savefig(ROOT_DIR / "results" / "plots" / "LR_surface_N_B_vary.pdf", bbox_inches="tight", dpi=300)
+    # A single row of panels: the constant parameters go into the supertitle and the shared
+    # x label is drawn once under the middle panel instead of below every panel.
+    # fig.suptitle(f"$\\bar{{R}}_B = {R_bars_B[0]}$, $\\gamma = {gamma}$")
+    axes[len(N_Bs) // 2].set_xlabel("$\\theta_{AB}$")
+    cbar = fig.colorbar(
+        im,
+        ax=axes,
+        orientation="horizontal",
+        location="bottom",
+        fraction=0.08,
+        pad=0.05,
+        aspect=30,
+    )
+    cbar.set_label("$\\Delta=\\mathrm{LR}(A,B) - \\mathrm{LR}(A,C)$")
+    # _fit_square_grid_height(fig, axes)
+    save_figure(fig, ROOT_DIR / "results" / "plots" / "LR_surface_N_B_vary.pdf")
+    plt.close(fig)
 
 
 if __name__ == "__main__":
