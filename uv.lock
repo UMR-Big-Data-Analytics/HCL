@@ -246,6 +246,16 @@ wheels = [
 ]
 
 [[package]]
+name = "critdd"
+version = "0.0.5.dev0"
+source = { git = "https://github.com/mirkobunse/critdd#0d5422d6e10a69f2a2da2252d59de9e959caa19e" }
+dependencies = [
+    { name = "networkx" },
+    { name = "numpy" },
+    { name = "scipy" },
+]
+
+[[package]]
 name = "cuda-bindings"
 version = "13.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1803,6 +1813,7 @@ source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
     { name = "bitsandbytes" },
+    { name = "critdd" },
     { name = "datasets" },
     { name = "figure-scale" },
     { name = "joblib" },
@@ -1835,6 +1846,7 @@ dev = [
 requires-dist = [
     { name = "accelerate", specifier = ">=1.14.0" },
     { name = "bitsandbytes", specifier = ">=0.49.2" },
+    { name = "critdd", git = "https://github.com/mirkobunse/critdd" },
     { name = "datasets", specifier = ">=5.0.0" },
     { name = "figure-scale", specifier = ">=0.1.0" },
     { name = "joblib", specifier = ">=1.5.3" },

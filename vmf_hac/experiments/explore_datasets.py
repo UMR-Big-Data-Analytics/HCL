@@ -31,7 +31,7 @@ def run(clusterer: Clusterer, x: np.ndarray, y: np.ndarray, dataset_name: str, s
 def main():
     config = get_config()
     model_name = "intfloat/multilingual-e5-large"
-    n_splits = 5
+    n_splits = 25
 
     jobs = []
 

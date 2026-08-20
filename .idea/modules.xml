@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/vMF-HAC.iml" filepath="$PROJECT_DIR$/.idea/vMF-HAC.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/vmf-hac.iml" filepath="$PROJECT_DIR$/.idea/vmf-hac.iml" />
     </modules>
   </component>
 </project>

@@ -34,7 +34,7 @@ def main():
     config = get_config()
     jobs = []
     model_name = "intfloat/multilingual-e5-large"
-    n_splits = 5
+    n_splits = 25
     reduction_factors = np.linspace(0.1, 1.0, 100).tolist()
 
     for dataset_name in config["datasets"]:

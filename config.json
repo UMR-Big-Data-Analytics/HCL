@@ -2,7 +2,6 @@
   "models": [
     "intfloat/multilingual-e5-large",
     "Qwen/Qwen3-Embedding-8B",
-    "tencent/KaLM-Embedding-Gemma3-12B-2511",
     "codefuse-ai/F2LLM-v2-14B"
   ],
   "datasets": [

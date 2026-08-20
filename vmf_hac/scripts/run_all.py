@@ -10,6 +10,7 @@ EXPERIMENT_MODULES = [
 ]
 
 PLOTTING_MODULES = [
+    "vmf_hac.plotting.datasets",
     "vmf_hac.plotting.gamma",
     "vmf_hac.plotting.dimensions",
     "vmf_hac.plotting.correlation_vmf_ward",
