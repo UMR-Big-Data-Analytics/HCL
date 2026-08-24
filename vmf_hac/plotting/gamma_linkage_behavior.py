@@ -9,9 +9,9 @@ from matplotlib.ticker import LogLocator, NullFormatter
 
 from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.plotting.consts import (
-    DATASET_NAME_MAP,
     DATASET_ORDER,
     categorical_palette,
+    dataset_display_name,
     figure_size,
     save_figure,
     setup_publication_style,
@@ -25,7 +25,7 @@ def main():
     os.makedirs(ROOT_DIR / "results" / "plots", exist_ok=True)
 
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_gamma_linkage_behavior.csv")
-    df["dataset_label"] = df["dataset_name"].map(DATASET_NAME_MAP).fillna(df["dataset_name"])
+    df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
     dataset_order = [label for label in DATASET_ORDER if label in set(df["dataset_label"])]
     gamma_order = sorted(df["gamma"].unique().tolist())
     gamma_palette = categorical_palette(gamma_order)

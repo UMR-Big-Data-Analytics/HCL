@@ -6,9 +6,9 @@ from matplotlib import pyplot as plt
 from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.entity.dataset import TextDatasets
 from vmf_hac.plotting.consts import (
-    DATASET_NAME_MAP,
     DATASET_ORDER,
     DATASET_PALETTE,
+    dataset_display_name,
     figure_size,
     save_figure,
     setup_publication_style,
@@ -24,11 +24,12 @@ def main():
         TextDatasets.CLUSTREC_COVID,
         TextDatasets.WIKICITIES,
     ]
-    dataset_names = [dataset.value.__str__() for dataset in datasets]
+    dataset_names = [dataset.value.technical_name for dataset in datasets]
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_vmf_ward.csv")
     df["dataset_name"] = df["dataset_name"].astype(str)
     df = df[df["dataset_name"].isin(dataset_names)]
-    df_mean = df.groupby(["dataset_name", "gamma"]).mean().reset_index()
+    df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
+    df_mean = df.groupby(["dataset_label", "gamma"], as_index=False).mean(numeric_only=True)
     gammas = sorted(df_mean["gamma"].unique().tolist())
     new_gammas = []
     for i in range(n_markers):
@@ -37,7 +38,6 @@ def main():
 
     plot_df = df_mean[df_mean["gamma"] <= 1].copy()
 
-    plot_df["dataset_label"] = plot_df["dataset_name"].map(DATASET_NAME_MAP)
     labels = [label for label in DATASET_ORDER if label in set(plot_df["dataset_label"].dropna().unique())]
     marker_cycle = ["o", "s", "D", "^", "v", "P", "X", "*", "<", ">", "h", "8"]
     marker_map = {lab: marker_cycle[i % len(marker_cycle)] for i, lab in enumerate(labels)}

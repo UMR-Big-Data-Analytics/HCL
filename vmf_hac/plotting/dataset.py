@@ -8,8 +8,8 @@ from critdd import Diagram, Diagrams
 from matplotlib import pyplot as plt
 
 from vmf_hac.definitions import ROOT_DIR
+from vmf_hac.entity.dataset import DatasetFactory
 from vmf_hac.plotting.consts import (
-    DATASET_NAME_MAP,
     categorical_palette,
     figure_size,
     page_aspect_limit,
@@ -181,7 +181,7 @@ def main() -> None:
 
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_datasets.csv")
     fallback_labels = df["dataset_name"].str.rsplit("/").str[-1]
-    df["dataset_label"] = df["dataset_name"].map(DATASET_NAME_MAP).fillna(fallback_labels)
+    df["dataset_label"] = df["dataset_name"].map(DatasetFactory.get_dataset_name_map()).fillna(fallback_labels)
     df["clusterer_label"] = df["clusterer_name"].map(CLUSTERER_LABELS).fillna(df["clusterer_name"])
 
     for metric, (metric_label, filename) in METRICS.items():

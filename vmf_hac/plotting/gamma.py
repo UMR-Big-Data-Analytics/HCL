@@ -5,7 +5,7 @@ import scienceplots  # noqa
 from matplotlib import pyplot as plt
 
 from vmf_hac.definitions import ROOT_DIR
-from vmf_hac.plotting.consts import DATASET_NAME_MAP, figure_size, save_figure, setup_publication_style
+from vmf_hac.plotting.consts import dataset_display_name, figure_size, save_figure, setup_publication_style
 
 
 def main():
@@ -14,7 +14,7 @@ def main():
 
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_gamma.csv")
     df["gamma"] = df["params"].apply(lambda p: eval(p)["gamma"])
-    df["dataset_label"] = df["dataset_name"].map(DATASET_NAME_MAP).fillna(df["dataset_name"])
+    df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
     df_mean = df[["gamma", "ari", "v_measure"]].groupby(["gamma"]).mean().sort_index()
     dataset_labels = sorted(df["dataset_label"].unique().tolist())
 

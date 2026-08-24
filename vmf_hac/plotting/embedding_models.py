@@ -8,9 +8,9 @@ from matplotlib import pyplot as plt
 
 from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.plotting.consts import (
-    DATASET_NAME_MAP,
     DATASET_ORDER,
     categorical_palette,
+    dataset_display_name,
     figure_size,
     page_aspect_limit,
     save_figure,
@@ -112,7 +112,7 @@ def main():
     os.makedirs(ROOT_DIR / "results" / "plots", exist_ok=True)
 
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models.csv")
-    df["dataset_label"] = df["dataset_name"].map(DATASET_NAME_MAP).fillna(df["dataset_name"])
+    df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
     df["clusterer_label"] = df["clusterer_name"].map(CLUSTERER_LABELS).fillna(df["clusterer_name"])
     df["model_label"] = df["model_name"].map(MODEL_LABELS).fillna(df["model_name"])
 

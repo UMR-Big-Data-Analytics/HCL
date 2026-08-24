@@ -26,10 +26,10 @@ def generate(model_id: str, dataset: TextDatasets) -> None:
         print(f"Generate embeddings for {model_id} and {dataset}")
         manager = DatasetManager(model_id)
         manager.get(dataset)
-        logger.info(f"✓ Successfully generated embeddings for {model_id} and {dataset.value}")
+        logger.info(f"✓ Successfully generated embeddings for {model_id} and {dataset.value.technical_name}")
     except Exception as e:
         logger.error(
-            f"✗ Failed to generate embeddings for {model_id} and {dataset.value}: {e}",
+            f"✗ Failed to generate embeddings for {model_id} and {dataset.value.technical_name}: {e}",
             exc_info=True,
         )
         raise

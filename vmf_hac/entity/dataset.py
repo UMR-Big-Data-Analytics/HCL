@@ -13,6 +13,12 @@ from sklearn.datasets import fetch_20newsgroups
 from vmf_hac.functions.dataset import embed_texts, ensure_valid_embeddings, get_emb_dir
 
 
+@dataclass(frozen=True)
+class DatasetInfo:
+    technical_name: str
+    visual_name: str
+
+
 class TextDatasets(Enum):
     """
     @article{enevoldsen2025mmtebmassivemultilingualtext,
@@ -35,12 +41,12 @@ class TextDatasets(Enum):
     }
     """
 
-    ARXIV_CLUSTERING_S2S = "mteb/arxiv-clustering-s2s"
-    BIORXIV_CLUSTERING_S2S = "mteb/biorxiv-clustering-s2s"
-    MEDRXIV_CLUSTERING_S2S = "mteb/medrxiv-clustering-s2s"
-    ARXIV_CLUSTERING_P2P = "mteb/arxiv-clustering-p2p"
-    BIORXIV_CLUSTERING_P2P = "mteb/biorxiv-clustering-p2p"
-    MEDRXIV_CLUSTERING_P2P = "mteb/medrxiv-clustering-p2p"
+    ARXIV_CLUSTERING_S2S = DatasetInfo("mteb/arxiv-clustering-s2s", "ArxivClusteringS2S")
+    BIORXIV_CLUSTERING_S2S = DatasetInfo("mteb/biorxiv-clustering-s2s", "BiorxivClusteringS2S")
+    MEDRXIV_CLUSTERING_S2S = DatasetInfo("mteb/medrxiv-clustering-s2s", "MedrxivClusteringS2S")
+    ARXIV_CLUSTERING_P2P = DatasetInfo("mteb/arxiv-clustering-p2p", "ArxivClusteringP2P")
+    BIORXIV_CLUSTERING_P2P = DatasetInfo("mteb/biorxiv-clustering-p2p", "BiorxivClusteringP2P.V2")
+    MEDRXIV_CLUSTERING_P2P = DatasetInfo("mteb/medrxiv-clustering-p2p", "MedrxivClusteringP2P")
     """
     @article{geigle:2021:arxiv,
       archiveprefix = {arXiv},
@@ -56,7 +62,7 @@ class TextDatasets(Enum):
       year = {2021},
     }
     """
-    REDDIT_CLUSTERING = "mteb/reddit-clustering"
+    REDDIT_CLUSTERING = DatasetInfo("mteb/reddit-clustering", "RedditClusteringV2")
     """
     @article{geigle:2021:arxiv,
       archiveprefix = {arXiv},
@@ -72,7 +78,7 @@ class TextDatasets(Enum):
       year = {2021},
     }
     """
-    REDDIT_CLUSTERING_P2P = "mteb/reddit-clustering-p2p"
+    REDDIT_CLUSTERING_P2P = DatasetInfo("mteb/reddit-clustering-p2p", "RedditClusteringP2P")
     """
     @article{geigle:2021:arxiv,
       archiveprefix = {arXiv},
@@ -88,7 +94,7 @@ class TextDatasets(Enum):
       year = {2021},
     }
     """
-    STACKEXCHANGE_CLUSTERING = "mteb/stackexchange-clustering"
+    STACKEXCHANGE_CLUSTERING = DatasetInfo("mteb/stackexchange-clustering", "StackexchangeClustering")
     """
     @article{geigle:2021:arxiv,
       archiveprefix = {arXiv},
@@ -104,7 +110,7 @@ class TextDatasets(Enum):
       year = {2021},
     }
     """
-    STACKEXCHANGE_CLUSTERING_P2P = "mteb/stackexchange-clustering-p2p"
+    STACKEXCHANGE_CLUSTERING_P2P = DatasetInfo("mteb/stackexchange-clustering-p2p", "StackexchangeClusteringP2P")
     """
     @misc{pham2025vnmtebvietnamesemassivetext,
         title={VN-MTEB: Vietnamese Massive Text Embedding Benchmark},
@@ -116,7 +122,7 @@ class TextDatasets(Enum):
         url={https://arxiv.org/abs/2507.21500}
     }
     """
-    STACKEXCHANGE_CLUSTERING_VN = "GreenNode/stackexchange-clustering-vn"
+    STACKEXCHANGE_CLUSTERING_VN = DatasetInfo("GreenNode/stackexchange-clustering-vn", "StackexchangeClusteringVN")
     """
     @misc{pham2025vnmtebvietnamesemassivetext,
         title={VN-MTEB: Vietnamese Massive Text Embedding Benchmark},
@@ -128,8 +134,10 @@ class TextDatasets(Enum):
         url={https://arxiv.org/abs/2507.21500}
     }
     """
-    STACKEXCHANGE_CLUSTERING_P2P_VN = "GreenNode/stackexchange-clustering-p2p-vn"
-    ALLO_PROF_CLUSTERING_S2S = "mteb/AlloProfClusteringS2S"
+    STACKEXCHANGE_CLUSTERING_P2P_VN = DatasetInfo(
+        "GreenNode/stackexchange-clustering-p2p-vn", "StackexchangeClusteringP2PVN"
+    )
+    ALLO_PROF_CLUSTERING_S2S = DatasetInfo("mteb/AlloProfClusteringS2S", "AlloProfClusteringS2S")
     """
     @article{li2022csl,
       author = {Li, Yudong and Zhang, Yuqing and Zhao, Zhe and Shen, Linlin and Liu, Weijie and Mao, Weiquan and Zhang, Hui},
@@ -138,7 +146,7 @@ class TextDatasets(Enum):
       year = {2022},
     }
     """
-    CLS_CLUSTERING_P2P = "mteb/CLSClusteringP2P"
+    CLS_CLUSTERING_P2P = DatasetInfo("mteb/CLSClusteringP2P", "CLSClusteringP2P")
     """
     @article{li2022csl,
       author = {Li, Yudong and Zhang, Yuqing and Zhao, Zhe and Shen, Linlin and Liu, Weijie and Mao, Weiquan and Zhang, Hui},
@@ -147,7 +155,7 @@ class TextDatasets(Enum):
       year = {2022},
     }
     """
-    CLS_CLUSTERING_P2P_V2 = "mteb/CLSClusteringP2P.v2"
+    CLS_CLUSTERING_P2P_V2 = DatasetInfo("mteb/CLSClusteringP2P.v2", "CLSClusteringP2PV2")
     """
     @article{li2022csl,
              author = {Li, Yudong and Zhang, Yuqing and Zhao, Zhe and Shen, Linlin and Liu, Weijie and Mao, Weiquan and Zhang, Hui},
@@ -156,7 +164,7 @@ class TextDatasets(Enum):
     year = {2022},
     }
     """
-    CLS_CLUSTERING_S2S = "C-MTEB/CLSClusteringS2S"
+    CLS_CLUSTERING_S2S = DatasetInfo("C-MTEB/CLSClusteringS2S", "CLSClusteringS2S")
     """
     @inproceedings{katz-etal-2024-knowledge,
       address = {Miami, Florida, USA},
@@ -172,8 +180,8 @@ class TextDatasets(Enum):
       year = {2024},
     }
     """
-    CLUSTREC_COVID = "Uri-ka/ClusTREC-Covid"
-    DIGIKALAMAG_CLUSTERING = "mteb/DigikalamagClustering"
+    CLUSTREC_COVID = DatasetInfo("Uri-ka/ClusTREC-Covid", "ClusTREC-Covid")
+    DIGIKALAMAG_CLUSTERING = DatasetInfo("mteb/DigikalamagClustering", "DigikalamagClustering")
     """
     @misc{ciancone2024extending,
       archiveprefix = {arXiv},
@@ -184,7 +192,7 @@ class TextDatasets(Enum):
       year = {2024},
     }
     """
-    HAL_CLUSTERING_S2S_V2 = "mteb/HALClusteringS2S.v2"
+    HAL_CLUSTERING_S2S_V2 = DatasetInfo("mteb/HALClusteringS2S.v2", "HALClusteringS2SV2")
     """
     @article{doddapaneni2022towards,
       author = {Sumanth Doddapaneni and Rahul Aralikatte and Gowtham Ramesh and Shreyansh Goyal and Mitesh M. Khapra and Anoop Kunchukuttan and Pratyush Kumar},
@@ -194,7 +202,7 @@ class TextDatasets(Enum):
       year = {2022},
     }
     """
-    INDIC_REVIEWS_CLUSTERING_P2P = "mteb/IndicReviewsClusteringP2P"
+    INDIC_REVIEWS_CLUSTERING_P2P = DatasetInfo("mteb/IndicReviewsClusteringP2P", "IndicReviewsClusteringP2P")
     """
     @misc{park2021klue,
       archiveprefix = {arXiv},
@@ -205,7 +213,7 @@ class TextDatasets(Enum):
       year = {2021},
     }
     """
-    KLUE_MRC_DOMAIN_CLUSTERING = "mteb/KlueMrcDomainClustering"
+    KLUE_MRC_DOMAIN_CLUSTERING = DatasetInfo("mteb/KlueMrcDomainClustering", "KlueMrcDomainClustering")
     """
     @misc{park2021klue,
       archiveprefix = {arXiv},
@@ -216,9 +224,11 @@ class TextDatasets(Enum):
       year = {2021},
     }
     """
-    KLUE_YNAT_MRC_CATEGORY_CLUSTERING = "mteb/KlueYnatMrcCategoryClustering"
-    LIVEDOOR_NEWS_CLUSTERING = "mteb/LivedoorNewsClustering"
-    LIVEDOOR_NEWS_CLUSTERING_V2 = "mteb/LivedoorNewsClustering.v2"
+    KLUE_YNAT_MRC_CATEGORY_CLUSTERING = DatasetInfo(
+        "mteb/KlueYnatMrcCategoryClustering", "KlueYnatMrcCategoryClustering"
+    )
+    LIVEDOOR_NEWS_CLUSTERING = DatasetInfo("mteb/LivedoorNewsClustering", "LivedoorNewsClustering")
+    LIVEDOOR_NEWS_CLUSTERING_V2 = DatasetInfo("mteb/LivedoorNewsClustering.v2", "LivedoorNewsClusteringV2")
     """
     @article{scialom2020mlsum,
       author = {Scialom, Thomas and Dray, Paul-Alexis and Lamprier, Sylvain and Piwowarski, Benjamin and Staiano, Jacopo},
@@ -227,7 +237,7 @@ class TextDatasets(Enum):
       year = {2020},
     }
     """
-    MLSUM_CLUSTERING_S2S_V2 = "mteb/mlsum"
+    MLSUM_CLUSTERING_S2S_V2 = DatasetInfo("mteb/mlsum", "MLSUMClusteringS2SV2")
     """
     @article{scialom2020mlsum,
       author = {Scialom, Thomas and Dray, Paul-Alexis and Lamprier, Sylvain and Piwowarski, Benjamin and Staiano, Jacopo},
@@ -236,7 +246,7 @@ class TextDatasets(Enum):
       year = {2020},
     }
     """
-    MLSUM_CLUSTERING_P2P_V2 = "mteb/mlsum"
+    MLSUM_CLUSTERING_P2P_V2 = DatasetInfo("mteb/mlsum", "MLSUMClusteringP2PV2")
     """
     @article{adelani2023masakhanews,
       author = {David Ifeoluwa Adelani and  Marek Masiak and  Israel Abebe Azime and  Jesujoba Oluwadara Alabi and  Atnafu Lambebo Tonja and  Christine Mwase and  Odunayo Ogundepo and  Bonaventure F. P. Dossou and  Akintunde Oladipo and  Doreen Nixdorf and  Chris Chinenye Emezue and  Sana Sabah al-azzawi and  Blessing K. Sibanda and  Davis David and  Lolwethu Ndolela and  Jonathan Mukiibi and  Tunde Oluwaseyi Ajayi and  Tatiana Moteu Ngoli and  Brian Odhiambo and  Abraham Toluwase Owodunni and  Nnaemeka C. Obiefuna and  Shamsuddeen Hassan Muhammad and  Saheed Salahudeen Abdullahi and  Mesay Gemeda Yigezu and  Tajuddeen Gwadabe and  Idris Abdulmumin and  Mahlet Taye Bame and  Oluwabusayo Olufunke Awoyomi and  Iyanuoluwa Shode and  Tolulope Anu Adelani and  Habiba Abdulganiy Kailani and  Abdul-Hakeem Omotayo and  Adetola Adeeko and  Afolabi Abeeb and  Anuoluwapo Aremu and  Olanrewaju Samuel and  Clemencia Siro and  Wangari Kimotho and  Onyekachi Raphael Ogbu and  Chinedu E. Mbonu and  Chiamaka I. Chukwuneke and  Samuel Fanijo and  Jessica Ojo and  Oyinkansola F. Awosan and  Tadesse Kebede Guge and  Sakayo Toadoum Sari and  Pamela Nyatsine and  Freedmore Sidume and  Oreen Yousuf and  Mardiyyah Oduwole and  Ussen Kimanuka and  Kanda Patrick Tshinu and  Thina Diko and  Siyanda Nxakama and   Abdulmejid Tuni Johar and  Sinodos Gebre and  Muhidin Mohamed and  Shafie Abdi Mohamed and  Fuad Mire Hassan and  Moges Ahmed Mehamed and  Evrard Ngabire and  and Pontus Stenetorp},
@@ -246,7 +256,7 @@ class TextDatasets(Enum):
       year = {2023},
     }
     """
-    MASAKHA_NEWS_CLUSTERING_P2P = "mteb/MasakhaNEWSClusteringP2P"
+    MASAKHA_NEWS_CLUSTERING_P2P = DatasetInfo("mteb/MasakhaNEWSClusteringP2P", "MasakhaNEWSClusteringP2P")
     """
     @article{adelani2023masakhanews,
       author = {David Ifeoluwa Adelani and  Marek Masiak and  Israel Abebe Azime and  Jesujoba Oluwadara Alabi and  Atnafu Lambebo Tonja and  Christine Mwase and  Odunayo Ogundepo and  Bonaventure F. P. Dossou and  Akintunde Oladipo and  Doreen Nixdorf and  Chris Chinenye Emezue and  Sana Sabah al-azzawi and  Blessing K. Sibanda and  Davis David and  Lolwethu Ndolela and  Jonathan Mukiibi and  Tunde Oluwaseyi Ajayi and  Tatiana Moteu Ngoli and  Brian Odhiambo and  Abraham Toluwase Owodunni and  Nnaemeka C. Obiefuna and  Shamsuddeen Hassan Muhammad and  Saheed Salahudeen Abdullahi and  Mesay Gemeda Yigezu and  Tajuddeen Gwadabe and  Idris Abdulmumin and  Mahlet Taye Bame and  Oluwabusayo Olufunke Awoyomi and  Iyanuoluwa Shode and  Tolulope Anu Adelani and  Habiba Abdulganiy Kailani and  Abdul-Hakeem Omotayo and  Adetola Adeeko and  Afolabi Abeeb and  Anuoluwapo Aremu and  Olanrewaju Samuel and  Clemencia Siro and  Wangari Kimotho and  Onyekachi Raphael Ogbu and  Chinedu E. Mbonu and  Chiamaka I. Chukwuneke and  Samuel Fanijo and  Jessica Ojo and  Oyinkansola F. Awosan and  Tadesse Kebede Guge and  Sakayo Toadoum Sari and  Pamela Nyatsine and  Freedmore Sidume and  Oreen Yousuf and  Mardiyyah Oduwole and  Ussen Kimanuka and  Kanda Patrick Tshinu and  Thina Diko and  Siyanda Nxakama and   Abdulmejid Tuni Johar and  Sinodos Gebre and  Muhidin Mohamed and  Shafie Abdi Mohamed and  Fuad Mire Hassan and  Moges Ahmed Mehamed and  Evrard Ngabire and  and Pontus Stenetorp},
@@ -256,7 +266,7 @@ class TextDatasets(Enum):
       year = {2023},
     }
     """
-    MASAKHA_NEWS_CLUSTERING_S2S = "mteb/MasakhaNEWSClusteringS2S"
+    MASAKHA_NEWS_CLUSTERING_S2S = DatasetInfo("mteb/MasakhaNEWSClusteringS2S", "MasakhaNEWSClusteringS2S")
     """
     @inproceedings{nishikawa-etal-2022-ease,
       address = {Seattle, United States},
@@ -274,8 +284,8 @@ class TextDatasets(Enum):
       year = {2022},
     }
     """
-    MEWS_C16_JA_CLUSTERING = "mteb/MewsC16JaClustering"
-    NLP_TWITTER_ANALYSIS = "hamedhf/nlp_twitter_analysis"
+    MEWS_C16_JA_CLUSTERING = DatasetInfo("mteb/MewsC16JaClustering", "MewsC16JaClustering")
+    NLP_TWITTER_ANALYSIS = DatasetInfo("hamedhf/nlp_twitter_analysis", "NLPTwitterAnalysis")
     """
     @misc{banar2025mtebnle5nlembeddingbenchmark,
       archiveprefix = {arXiv},
@@ -287,7 +297,7 @@ class TextDatasets(Enum):
       year = {2025},
     }
     """
-    OPEN_TENTER_CLUSTERING_P2P = "clips/mteb-nl-opentender-cls-pr"
+    OPEN_TENTER_CLUSTERING_P2P = DatasetInfo("clips/mteb-nl-opentender-cls-pr", "OpenTenderClusteringP2P")
     """
     @misc{banar2025mtebnle5nlembeddingbenchmark,
       archiveprefix = {arXiv},
@@ -299,9 +309,9 @@ class TextDatasets(Enum):
       year = {2025},
     }
     """
-    OPEN_TENTER_CLUSTERING_S2S = "clips/mteb-nl-opentender-clst-s2s-pr"
-    PLSC_CLUSTERING_P2P_V2 = "mteb/PlscClusteringP2P.v2"
-    PLSC_CLUSTERING_S2S_V2 = "PL-MTEB/plsc-clustering-s2s"
+    OPEN_TENTER_CLUSTERING_S2S = DatasetInfo("clips/mteb-nl-opentender-clst-s2s-pr", "OpenTenderClusteringS2S")
+    PLSC_CLUSTERING_P2P_V2 = DatasetInfo("mteb/PlscClusteringP2P.v2", "PLSCClusteringP2PV2")
+    PLSC_CLUSTERING_S2S_V2 = DatasetInfo("PL-MTEB/plsc-clustering-s2s", "PLSCClusteringS2SV2")
     """
     @misc{pham2025vnmtebvietnamesemassivetext,
       archiveprefix = {arXiv},
@@ -313,7 +323,7 @@ class TextDatasets(Enum):
       year = {2025},
     }
     """
-    REDDIT_CLUSTERING_VN = "GreenNode/reddit-clustering-vn"
+    REDDIT_CLUSTERING_VN = DatasetInfo("GreenNode/reddit-clustering-vn", "RedditClusteringVN")
     """
     @misc{pham2025vnmtebvietnamesemassivetext,
       archiveprefix = {arXiv},
@@ -325,9 +335,13 @@ class TextDatasets(Enum):
       year = {2025},
     }
     """
-    REDDIT_CLUSTERING_P2P_VN = "GreenNode/reddit-clustering-p2p-vn"
-    RU_SCI_BENCH_GRNTI_CLUSTERING_P2P = "ai-forever/ru-scibench-grnti-classification"
-    RU_SCI_BENCH_OECD_CLUSTERING_P2P = "ai-forever/ru-scibench-oecd-classification"
+    REDDIT_CLUSTERING_P2P_VN = DatasetInfo("GreenNode/reddit-clustering-p2p-vn", "RedditClusteringP2PVN")
+    RU_SCI_BENCH_GRNTI_CLUSTERING_P2P = DatasetInfo(
+        "ai-forever/ru-scibench-grnti-classification", "RuSciBenchGrntiClusteringP2P"
+    )
+    RU_SCI_BENCH_OECD_CLUSTERING_P2P = DatasetInfo(
+        "ai-forever/ru-scibench-oecd-classification", "RuSciBenchOecdClusteringP2P"
+    )
     """
     @misc{pham2025vnmtebvietnamesemassivetext,
       archiveprefix = {arXiv},
@@ -339,7 +353,7 @@ class TextDatasets(Enum):
       year = {2025},
     }
     """
-    ROMANI_BIBLE_CLUSTERING = "mteb/RomaniBibleClustering"
+    ROMANI_BIBLE_CLUSTERING = DatasetInfo("mteb/RomaniBibleClustering", "RomaniBibleClustering")
     """
     @mastersthesis{navjord2023beyond,
       author = {Navjord, J{\\o}rgen Johnsen and Korsvik, Jon-Mikkel Ryen},
@@ -348,7 +362,7 @@ class TextDatasets(Enum):
       year = {2023},
     }
     """
-    SNL_HIERARCHICAL_CLUSTERING_P2P = "mteb/SNLHierarchicalClusteringP2P"
+    SNL_HIERARCHICAL_CLUSTERING_P2P = DatasetInfo("mteb/SNLHierarchicalClusteringP2P", "SNLHierarchicalClusteringP2P")
     """
     @mastersthesis{navjord2023beyond,
       author = {Navjord, J{\\o}rgen Johnsen and Korsvik, Jon-Mikkel Ryen},
@@ -357,7 +371,7 @@ class TextDatasets(Enum):
       year = {2023},
     }
     """
-    SNL_HIERARCHICAL_CLUSTERING_S2S = "mteb/SNLHierarchicalClusteringS2S"
+    SNL_HIERARCHICAL_CLUSTERING_S2S = DatasetInfo("mteb/SNLHierarchicalClusteringS2S", "SNLHierarchicalClusteringS2S")
     """
     @inproceedings{monsen2021method,
       author = {Monsen, Julius and J{\"o}nsson, Arne},
@@ -366,7 +380,7 @@ class TextDatasets(Enum):
       year = {2021},
     }
     """
-    SWEDN_CLUSTERING = "mteb/SwednClustering"
+    SWEDN_CLUSTERING = DatasetInfo("mteb/SwednClustering", "SwednClustering")
     """
     @inproceedings{monsen2021method,
       author = {Monsen, Julius and J{\"o}nsson, Arne},
@@ -375,7 +389,7 @@ class TextDatasets(Enum):
       year = {2021},
     }
     """
-    SWEDN_CLUSTERING_P2P = "mteb/SwednClusteringP2P"
+    SWEDN_CLUSTERING_P2P = DatasetInfo("mteb/SwednClusteringP2P", "SwednClusteringP2P")
     """
     @inproceedings{monsen2021method,
       author = {Monsen, Julius and J{\"o}nsson, Arne},
@@ -384,7 +398,7 @@ class TextDatasets(Enum):
       year = {2021},
     }
     """
-    SWEDN_CLUSTERING_S2S = "mteb/SwednClusteringS2S"
+    SWEDN_CLUSTERING_S2S = DatasetInfo("mteb/SwednClusteringS2S", "SwednClusteringS2S")
     """
     @inproceedings{wehrli-etal-2023-german,
         title = "{G}erman Text Embedding Clustering Benchmark",
@@ -404,7 +418,7 @@ class TextDatasets(Enum):
         pages = "187--201",
     }
     """
-    TEN_K_GNAD_CLUSTERING_P2P = "slvnwhrl/tenkgnad-clustering-p2p"
+    TEN_K_GNAD_CLUSTERING_P2P = DatasetInfo("slvnwhrl/tenkgnad-clustering-p2p", "10KgnadClusteringP2P")
     """
     @inproceedings{wehrli-etal-2023-german,
         title = "{G}erman Text Embedding Clustering Benchmark",
@@ -424,7 +438,7 @@ class TextDatasets(Enum):
         pages = "187--201",
     }
     """
-    TEN_K_GNAD_CLUSTERING_S2S = "slvnwhrl/tenkgnad-clustering-s2s"
+    TEN_K_GNAD_CLUSTERING_S2S = DatasetInfo("slvnwhrl/tenkgnad-clustering-s2s", "10KgnadClusteringS2S")
     """
     @inproceedings{eisner2007proceedings,
       author = {Eisner, Jason},
@@ -440,7 +454,7 @@ class TextDatasets(Enum):
       year = {2006},
     }
     """
-    THU_NEWS_CLUSTERING_P2P = "C-MTEB/ThuNewsClusteringP2P"
+    THU_NEWS_CLUSTERING_P2P = DatasetInfo("C-MTEB/ThuNewsClusteringP2P", "ThuNewsClusteringP2P")
     """
     @inproceedings{eisner2007proceedings,
       author = {Eisner, Jason},
@@ -456,7 +470,7 @@ class TextDatasets(Enum):
       year = {2006},
     }
     """
-    THU_NEWS_CLUSTERING_S2S = "C-MTEB/ThuNewsClusteringS2S"
+    THU_NEWS_CLUSTERING_S2S = DatasetInfo("C-MTEB/ThuNewsClusteringS2S", "ThuNewsClusteringS2S")
     """
     @misc{pham2025vnmtebvietnamesemassivetext,
       archiveprefix = {arXiv},
@@ -468,7 +482,9 @@ class TextDatasets(Enum):
       year = {2025},
     }
     """
-    TWENTY_NEWSGROUPS_CLUSTERING_VN = "GreenNode/twentynewsgroups-clustering-vn"
+    TWENTY_NEWSGROUPS_CLUSTERING_VN = DatasetInfo(
+        "GreenNode/twentynewsgroups-clustering-vn", "20NewsgroupsClusteringVN"
+    )
     """
     @dataset{aspeslagh2024vabb,
       author = {Aspeslagh, Pieter and Guns, Raf and Engels, Tim C. E.},
@@ -479,7 +495,7 @@ class TextDatasets(Enum):
       year = {2024},
     }
     """
-    VABB_CLUSTERING_P2P = "clips/mteb-nl-vabb-cls"
+    VABB_CLUSTERING_P2P = DatasetInfo("clips/mteb-nl-vabb-cls", "VABBClusteringP2P")
     """
     @dataset{aspeslagh2024vabb,
       author = {Aspeslagh, Pieter and Guns, Raf and Engels, Tim C. E.},
@@ -490,7 +506,7 @@ class TextDatasets(Enum):
       year = {2024},
     }
     """
-    VABB_CLUSTERING_S2S = "clips/mteb-nl-vabb-cls"
+    VABB_CLUSTERING_S2S = DatasetInfo("clips/mteb-nl-vabb-cls", "VABBClusteringS2S")
     r"""
     @article{kasmaee2024chemteb,
       author = {Kasmaee, Ali Shiraee and Khodadad, Mohammad and Saloot, Mohammad Arshi and Sherck, Nick and Dokas, Stephen and Mahyar, Hamidreza and Samiee, Soheila},
@@ -499,7 +515,9 @@ class TextDatasets(Enum):
       year = {2024},
     }
     """
-    WIKIPEDIA_CHEMISTRY_TOPIC_CLUSTERING = "BASF-AI/WikipediaEasy10Clustering"
+    WIKIPEDIA_CHEMISTRY_TOPIC_CLUSTERING = DatasetInfo(
+        "BASF-AI/WikipediaEasy10Clustering", "WikipediaChemistryTopicClustering"
+    )
     r"""
     @article{kasmaee2024chemteb,
       author = {Kasmaee, Ali Shiraee and Khodadad, Mohammad and Saloot, Mohammad Arshi and Sherck, Nick and Dokas, Stephen and Mahyar, Hamidreza and Samiee, Soheila},
@@ -508,12 +526,14 @@ class TextDatasets(Enum):
       year = {2024},
     }
     """
-    WIKIPEDIA_SPECIALITIES_IN_CHEMISTRY_TOPIC_CLUSTERING = "BASF-AI/WikipediaMedium5Clustering"
-    TWENTY_NEWSGROUPS_CLUSTERING = "mteb/twentynewsgroups-clustering"
-    WIKI_CLUSTERING_P2P_V2 = "mteb/WikiClusteringP2P.v2"
-    BEYTOOTE_CLUSTERING = "MCINext/beytoote-clustering"
-    BIG_PATENT_CLUSTERING = "jinaai/big-patent-clustering"
-    BIG_PATENT_CLUSTERING_V2 = "mteb/big-patent"
+    WIKIPEDIA_SPECIALITIES_IN_CHEMISTRY_TOPIC_CLUSTERING = DatasetInfo(
+        "BASF-AI/WikipediaMedium5Clustering", "WikipediaSpecialitiesInChemistry"
+    )
+    TWENTY_NEWSGROUPS_CLUSTERING = DatasetInfo("mteb/twentynewsgroups-clustering", "20NewsgroupsClustering")
+    WIKI_CLUSTERING_P2P_V2 = DatasetInfo("mteb/WikiClusteringP2P.v2", "WikiClusteringP2PV2")
+    BEYTOOTE_CLUSTERING = DatasetInfo("MCINext/beytoote-clustering", "BeytooteClustering")
+    BIG_PATENT_CLUSTERING = DatasetInfo("jinaai/big-patent-clustering", "BigPatentClusteringP2P")
+    BIG_PATENT_CLUSTERING_V2 = DatasetInfo("mteb/big-patent", "BigPatentClusteringV2")
     """
     @inproceedings{Remus2019GermEval2T,
       author = {Steffen Remus and Rami Aly and Chris Biemann},
@@ -540,7 +560,7 @@ class TextDatasets(Enum):
     pages = "187--201",
     }
     """
-    BLURBS_CLUSTERING_P2P = "slvnwhrl/blurbs-clustering-p2p"
+    BLURBS_CLUSTERING_P2P = DatasetInfo("slvnwhrl/blurbs-clustering-p2p", "BlurbsClusteringP2P")
     """
     @inproceedings{Remus2019GermEval2T,
       author = {Steffen Remus and Rami Aly and Chris Biemann},
@@ -550,7 +570,7 @@ class TextDatasets(Enum):
       year = {2019},
     }
     """
-    BLURBS_CLUSTERING_S2S = "slvnwhrl/blurbs-clustering-s2s"
+    BLURBS_CLUSTERING_S2S = DatasetInfo("slvnwhrl/blurbs-clustering-s2s", "BlurbsClusteringS2S")
     """
     @article{shahinmoghadam2024benchmarking,
       author = {Shahinmoghadam, Mehrzad and Motamedi, Ali},
@@ -559,7 +579,7 @@ class TextDatasets(Enum):
       year = {2024},
     }
     """
-    BUILT_BENCH_CLUSTERING_P2P = "mehrzad-shahin/BuiltBench-clustering-p2p"
+    BUILT_BENCH_CLUSTERING_P2P = DatasetInfo("mehrzad-shahin/BuiltBench-clustering-p2p", "BuiltBenchP2P")
     """
     @misc{banar2025mtebnle5nlembeddingbenchmark,
       title={MTEB-NL and E5-NL: Embedding Benchmark and Models for Dutch},
@@ -579,7 +599,7 @@ class TextDatasets(Enum):
         year={2022}
     }
     """
-    DUTCH_NEWS_ARTICLES_CLUSTERING_P2P = "clips/mteb-nl-news-articles-cls"
+    DUTCH_NEWS_ARTICLES_CLUSTERING_P2P = DatasetInfo("clips/mteb-nl-news-articles-cls", "DutchNewsArticleClusteringP2P")
     """
     @misc{banar2025mtebnle5nlembeddingbenchmark,
       title={MTEB-NL and E5-NL: Embedding Benchmark and Models for Dutch},
@@ -599,7 +619,7 @@ class TextDatasets(Enum):
         year={2022}
     }
     """
-    DUTCH_NEWS_ARTICLES_CLUSTERING_S2S = "clips/mteb-nl-news-articles-cls"
+    DUTCH_NEWS_ARTICLES_CLUSTERING_S2S = DatasetInfo("clips/mteb-nl-news-articles-cls", "DutchNewsArticleClusteringS2S")
     """
     @inproceedings{dadas-etal-2020-evaluation,
       address = {Marseille, France},
@@ -631,8 +651,8 @@ class TextDatasets(Enum):
       year = {2020},
     }
     """
-    EIGHT_TAGS_CLUSTERING = "PL-MTEB/8tags-clustering"
-    GEOREVIEW_CLUSTERING_P2P = "ai-forever/georeview-clustering-p2p"
+    EIGHT_TAGS_CLUSTERING = DatasetInfo("PL-MTEB/8tags-clustering", "8TagsClustering")
+    GEOREVIEW_CLUSTERING_P2P = DatasetInfo("ai-forever/georeview-clustering-p2p", "GeoreviewClusteringP2P")
     """
     @misc{ciancone2024extending,
       title={Extending the Massive Text Embedding Benchmark to French},
@@ -643,7 +663,7 @@ class TextDatasets(Enum):
       primaryClass={cs.CL}
     }
     """
-    HAL_CLUSTERING_S2S = "lyon-nlp/clustering-hal-s2s"  # use mteb_eval subset
+    HAL_CLUSTERING_S2S = DatasetInfo("lyon-nlp/clustering-hal-s2s", "HALClusteringS2S")
     """
     @misc{arxiv_org_submitters_2024,
       author = {arXiv.org submitters},
@@ -654,7 +674,7 @@ class TextDatasets(Enum):
       year = {2024},
     }
     """
-    HUME_ARXIV_CLUSTERING_P2P = "mteb/mteb-human-arxiv-clustering"
+    HUME_ARXIV_CLUSTERING_P2P = DatasetInfo("mteb/mteb-human-arxiv-clustering", "HumeArxivClusteringP2P")
     """
     @article{geigle:2021:arxiv,
       archiveprefix = {arXiv},
@@ -670,7 +690,7 @@ class TextDatasets(Enum):
       year = {2021},
     }
     """
-    HUME_REDDIT_CLUSTERING_S2S = "mteb/mteb-human-reddit-clustering"
+    HUME_REDDIT_CLUSTERING_S2S = DatasetInfo("mteb/mteb-human-reddit-clustering", "HumeRedditClusteringS2S")
     """
     @inproceedings{adelani-etal-2023-sib,
       address = {Toronto, Canada},
@@ -689,7 +709,7 @@ class TextDatasets(Enum):
       year = {2023},
     }
     """
-    HUME_SIB200_CLUSTERING_S2S = "mteb/mteb-human-sib200-clustering"
+    HUME_SIB200_CLUSTERING_S2S = DatasetInfo("mteb/mteb-human-sib200-clustering", "HumeSib200ClusteringS2S")
     """
    @article{adelani2023sib,
       author = {Adelani, David Ifeoluwa and Liu, Hannah and Shen, Xiaoyu and Vassilyev, Nikita and Alabi, Jesujoba O and Mao, Yanke and Gao, Haonan and Lee, Annie En-Shiun},
@@ -698,9 +718,9 @@ class TextDatasets(Enum):
       year = {2023},
     }
     """
-    SIB_200_CLUSTERING_S2S = "mteb/sib200"
-    SID_CLUSTERING = "MCINext/sid-clustering"
-    HAMSHAHRI_CLUSTERING = "community-datasets/farsi_news"
+    SIB_200_CLUSTERING_S2S = DatasetInfo("mteb/sib200", "SIB200ClusteringS2S")
+    SID_CLUSTERING = DatasetInfo("MCINext/sid-clustering", "SidClustering")
+    HAMSHAHRI_CLUSTERING = DatasetInfo("community-datasets/farsi_news", "HamshahriClustering")
     """
     @article{banar2023transfer,
       author = {Banar, Nikolay and Daelemans, Walter and Kestemont, Mike},
@@ -713,7 +733,7 @@ class TextDatasets(Enum):
       year = {2023},
     }
     """
-    ICONCLASS_CLUSTERING_S2S = "clips/mteb-nl-iconclass-cls"
+    ICONCLASS_CLUSTERING_S2S = DatasetInfo("clips/mteb-nl-iconclass-cls", "IconclassClusteringS2S")
     """
     @inproceedings{saravia-etal-2018-carer,
       abstract = {Emotions are expressed in nuanced ways, which varies by collective or individual experiences, knowledge, and beliefs. Therefore, to understand emotion, as conveyed through text, a robust mechanism capable of capturing and modeling different linguistic nuances and phenomena is needed. We propose a semi-supervised, graph-based algorithm to produce rich structural descriptors which serve as the building blocks for constructing contextualized affect representations from text. The pattern-based representations are further enriched with word embeddings and evaluated through several emotion recognition tasks. Our experimental results demonstrate that the proposed method outperforms state-of-the-art techniques on emotion recognition tasks.},
@@ -746,8 +766,8 @@ class TextDatasets(Enum):
       year = {2019},
     }
     """
-    SPANISH_NEWS_CLUSTERING_P2P = "jinaai/spanish_news_clustering"
-    EMOTION = "mteb/emotion"
+    SPANISH_NEWS_CLUSTERING_P2P = DatasetInfo("jinaai/spanish_news_clustering", "SpanishNewsClusteringP2P")
+    EMOTION = DatasetInfo("mteb/emotion", "Emotion")
     """
     @misc{lef23,
       author = {Lefebvre-Brossard, Antoine and Gazaille, Stephane and Desmarais, Michel C.},
@@ -760,11 +780,11 @@ class TextDatasets(Enum):
       year = {2023},
     }
     """
-    ALLO_PROF_CLUSTERING_P2P = "mteb/AlloProfClusteringP2P"
-    TWENTY_NEWSGROUPS_V2 = "mteb/llm-eval-twenty_newsgroups_v2"
-    BANKING77 = "mteb/llm-eval-banking77"
-    BIG_PATENT = "mteb/llm-eval-big_patent_clustering"
-    DBPEDIA_14 = "mteb/llm-eval-dbpedia_14"
+    ALLO_PROF_CLUSTERING_P2P = DatasetInfo("mteb/AlloProfClusteringP2P", "AlloProfClusteringP2P")
+    TWENTY_NEWSGROUPS_V2 = DatasetInfo("mteb/llm-eval-twenty_newsgroups_v2", "20NewsgroupsV2")
+    BANKING77 = DatasetInfo("mteb/llm-eval-banking77", "Banking77")
+    BIG_PATENT = DatasetInfo("mteb/llm-eval-big_patent_clustering", "BigPatentClustering")
+    DBPEDIA_14 = DatasetInfo("mteb/llm-eval-dbpedia_14", "DBPedia")
     """
     @online{wikidump2024,
       author = {Wikimedia Foundation},
@@ -772,8 +792,8 @@ class TextDatasets(Enum):
       url = {https://dumps.wikimedia.org},
     }
     """
-    WIKICITIES = "mteb/WikiCitiesClustering"
-    TWEET_TOPIC_SINGLE = "mteb/tweet_topic_single"
+    WIKICITIES = DatasetInfo("mteb/WikiCitiesClustering", "Wikicities")
+    TWEET_TOPIC_SINGLE = DatasetInfo("mteb/tweet_topic_single", "TweetTopicSingle")
     """
     @misc{twenty_newsgroups_113,
       author       = {Mitchell, Tom},
@@ -783,7 +803,7 @@ class TextDatasets(Enum):
       note         = {{DOI}: https://doi.org/10.24432/C5C323}
     }
     """
-    TWENTY_NEWSGROUPS = "sklearn/20newsgroups"
+    TWENTY_NEWSGROUPS = DatasetInfo("sklearn/20newsgroups", "20Newsgroups")
 
 
 custom_text_dataset_properties = {
@@ -807,9 +827,13 @@ class DatasetFactory:
     @staticmethod
     def from_string(name: str) -> TextDatasets:
         for dataset in TextDatasets:
-            if dataset.value == name:
+            if dataset.value.technical_name == name:
                 return dataset
         raise ValueError(f"Unknown dataset name: {name}")
+
+    @staticmethod
+    def get_dataset_name_map() -> dict[str, str]:
+        return {ds.value.technical_name: ds.value.visual_name for ds in reversed(list(TextDatasets))}
 
 
 @dataclass
@@ -899,8 +923,8 @@ class DatasetManager:
 
     @staticmethod
     def _get_dataset(dataset: TextDatasets, encoding_model: str) -> TextDataset:
-        name = dataset.value
-        custom_datasets = set([i.value for i in custom_text_dataset_properties.keys()])
+        name = dataset.value.technical_name
+        custom_datasets = set([i.value.technical_name for i in custom_text_dataset_properties.keys()])
         if name == "sklearn/20newsgroups":
             return DatasetManager.get_20newsgroups_embedding(encoding_model)
         elif name in custom_datasets:
@@ -923,7 +947,7 @@ class DatasetManager:
         split_names = cast(list[str], custom_text_dataset_properties[dataset].get("split_names", None))
         subset = custom_text_dataset_properties[dataset].get("subset", None)
         return DatasetManager.get_mteb_clustering_data(
-            dataset.value,
+            dataset.value.technical_name,
             model_name,
             custom_text_col=text_col,
             custom_label_col=label_col,

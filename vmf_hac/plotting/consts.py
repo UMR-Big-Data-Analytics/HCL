@@ -9,6 +9,8 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 
+from vmf_hac.entity.dataset import DatasetFactory
+
 PALETTE_NAME = "colorblind"
 PT_PER_INCH = 72.27
 LATEX_PREAMBLE = "\n".join(
@@ -26,16 +28,17 @@ PUBLICATION_FONT_SIZE_PT = 8
 DEFAULT_FIGURE_ASPECT = 3 / 4
 SQUARE_FIGURE_ASPECT = 1.0
 
-DATASET_NAME_MAP = {
-    "mteb/WikiCitiesClustering": "WikiCities",
-    "mehrzad-shahin/BuiltBench-clustering-p2p": "BuiltBenchP2P",
-    "mteb/llm-eval-dbpedia_14": "DBPedia",
-    "Uri-ka/ClusTREC-Covid": "ClusTREC-Covid",
-}
+_DATASET_NAME_MAP: dict[str, str] | None = None
 
-DATASET_ORDER = ["DBPedia", "BuiltBenchP2P", "ClusTREC-Covid", "WikiCities"]
+DATASET_ORDER = ["DBPedia", "BuiltBenchP2P", "ClusTREC-Covid", "Wikicities"]
 _DATASET_COLORS = sns.color_palette(PALETTE_NAME, n_colors=len(DATASET_ORDER))
 DATASET_PALETTE = dict(zip(DATASET_ORDER, _DATASET_COLORS, strict=False))
+
+
+def dataset_display_name(dataset_name: object) -> str:
+    """Return the canonical display name for a dataset identifier or label."""
+    name = str(dataset_name)
+    return DatasetFactory.get_dataset_name_map().get(name, name.rsplit("/", maxsplit=1)[-1])
 
 
 def categorical_palette(labels: Sequence[object]) -> dict[object, tuple[float, float, float]]:

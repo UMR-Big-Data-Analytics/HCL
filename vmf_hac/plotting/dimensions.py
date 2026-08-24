@@ -9,8 +9,8 @@ from matplotlib import pyplot as plt
 
 from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.plotting.consts import (
-    DATASET_NAME_MAP,
     categorical_palette,
+    dataset_display_name,
     figure_size,
     page_aspect_limit,
     save_figure,
@@ -30,24 +30,6 @@ CLUSTERER_LABELS = {
 }
 
 
-MAX_TITLE_CHARS = 22
-_DATASET_SUFFIXES = ("-clustering-p2p", "-clustering-vn", "-clustering", "Clustering", "-cls-pr", "-cls")
-
-
-def _short_dataset_label(dataset_name: str) -> str:
-    """Panel title that fits into half a text column."""
-    if dataset_name in DATASET_NAME_MAP:
-        return DATASET_NAME_MAP[dataset_name]
-    label = dataset_name.split("/")[-1]
-    for suffix in _DATASET_SUFFIXES:
-        if label.endswith(suffix):
-            label = label[: -len(suffix)]
-            break
-    if len(label) > MAX_TITLE_CHARS:
-        label = label[: MAX_TITLE_CHARS - 1] + "..."
-    return label
-
-
 def _latex_escape(value: str) -> str:
     return (
         value.replace("\\", "\\textbackslash{}")
@@ -65,18 +47,18 @@ def _latex_escape(value: str) -> str:
 
 def _compute_v_measure_auc_table(df: pd.DataFrame) -> pd.DataFrame:
     auc_rows: list[dict[str, object]] = []
-    for (clusterer_label, dataset_name), frame in df.groupby(["clusterer_label", "dataset_name"]):
+    for (clusterer_label, dataset_label), frame in df.groupby(["clusterer_label", "dataset_label"]):
         curve = frame.groupby("reduction_factor")["v_measure"].mean().reset_index().sort_values("reduction_factor")
         auc_rows.append(
             {
                 "clusterer_label": clusterer_label,
-                "dataset_name": dataset_name,
+                "dataset_label": dataset_label,
                 "auc": float(np.trapezoid(curve["v_measure"].to_numpy(), curve["reduction_factor"].to_numpy())),
             }
         )
 
     auc_df = pd.DataFrame(auc_rows)
-    table = auc_df.pivot(index="dataset_name", columns="clusterer_label", values="auc")
+    table = auc_df.pivot(index="dataset_label", columns="clusterer_label", values="auc")
     algorithm_columns = [label for label in CLUSTERER_LABELS.values() if label in set(table.columns)]
     table = table.reindex(columns=algorithm_columns)
 
@@ -120,11 +102,12 @@ def main():
     setup_publication_style()
     os.makedirs(ROOT_DIR / "results" / "plots", exist_ok=True)
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_dimensions.csv")
+    df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
     df = (
         df[
             [
                 "clusterer_name",
-                "dataset_name",
+                "dataset_label",
                 "dim",
                 "ari",
                 "v_measure",
@@ -140,7 +123,7 @@ def main():
                 "running_time_s",
             ]
         ]
-        .groupby(["clusterer_name", "dataset_name", "dim"])
+        .groupby(["clusterer_name", "dataset_label", "dim"])
         .mean()
         .reset_index()
     )
@@ -149,7 +132,7 @@ def main():
     label_order = [CLUSTERER_LABELS[name] for name in clusterer_order]
     clusterer_palette = categorical_palette(label_order)
 
-    n_datasets = df["dataset_name"].unique().shape[0]
+    n_datasets = df["dataset_label"].unique().shape[0]
     cols = min(2, n_datasets)
     rows = ceil(n_datasets / cols)
     aspect = min(rows / cols, page_aspect_limit(columns=1))
@@ -161,7 +144,7 @@ def main():
     legend_handles = None
     legend_labels = None
 
-    for i, (dataset, frame) in enumerate(df.groupby("dataset_name")):
+    for i, (dataset_label, frame) in enumerate(df.groupby("dataset_label")):
         row, col = divmod(i, cols)
         ax = axes[row, col]
         sns.lineplot(
@@ -173,7 +156,7 @@ def main():
             palette=clusterer_palette,
             ax=ax,
         )
-        ax.set_title(_short_dataset_label(str(dataset)))
+        ax.set_title(dataset_label)
         ax.grid(True, alpha=0.3)
         ax.set_xlabel("")
         ax.set_ylabel("")

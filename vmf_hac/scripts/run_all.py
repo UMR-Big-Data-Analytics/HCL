@@ -10,12 +10,14 @@ EXPERIMENT_MODULES = [
 ]
 
 PLOTTING_MODULES = [
-    "vmf_hac.plotting.datasets",
+    "vmf_hac.plotting.dataset",
     "vmf_hac.plotting.gamma",
     "vmf_hac.plotting.dimensions",
     "vmf_hac.plotting.correlation_vmf_ward",
     "vmf_hac.plotting.gamma_linkage_behavior",
     "vmf_hac.plotting.surface",
+    "vmf_hac.plotting.embedding_models",
+    "vmf_hac.plotting.embedding_models_ranks",
 ]
 
 
