@@ -838,9 +838,63 @@ class DatasetFactory:
 class TextDataset:
     name: str
     encoding_model: str
-    embeddings: np.ndarray
-    labels: np.ndarray
-    texts: Sequence[str]
+    _embeddings: np.ndarray | None = None
+    _labels: np.ndarray | None = None
+    _texts: Sequence[str] | None = None
+
+    @property
+    def embeddings(self) -> np.ndarray:
+        if self._embeddings is None:
+            emb_dir = get_emb_dir(self.name, self.encoding_model)
+            if os.path.exists(emb_dir):
+                embeddings = np.load(os.path.join(emb_dir, "embeddings.npy"))
+                self._embeddings = ensure_valid_embeddings(embeddings, source=f"cached embeddings in {emb_dir}")
+            else:
+                raise ValueError(
+                    f"Embeddings not found for dataset {self.name} with encoding model {self.encoding_model}. Please generate embeddings first."
+                )
+        assert self._embeddings is not None, "Embeddings should not be None after loading."
+        return self._embeddings
+
+    @embeddings.setter
+    def embeddings(self, value: np.ndarray):
+        self._embeddings = value
+
+    @property
+    def labels(self) -> np.ndarray:
+        if self._labels is None:
+            emb_dir = get_emb_dir(self.name, self.encoding_model)
+            if os.path.exists(emb_dir):
+                df = pd.read_parquet(os.path.join(emb_dir, "data.parquet"), columns=["label"])
+                self._labels = np.asarray(df["label"].values)
+            else:
+                raise ValueError(
+                    f"Labels not found for dataset {self.name} with encoding model {self.encoding_model}. Please generate embeddings first."
+                )
+        assert self._labels is not None, "Labels should not be None after loading."
+        return self._labels
+
+    @labels.setter
+    def labels(self, value: np.ndarray):
+        self._labels = value
+
+    @property
+    def texts(self) -> Sequence[str]:
+        if self._texts is None:
+            emb_dir = get_emb_dir(self.name, self.encoding_model)
+            if os.path.exists(emb_dir):
+                df = pd.read_parquet(os.path.join(emb_dir, "data.parquet"), columns=["text"])
+                self._texts = df["text"].tolist()
+            else:
+                raise ValueError(
+                    f"Texts not found for dataset {self.name} with encoding model {self.encoding_model}. Please generate embeddings first."
+                )
+        assert self._texts is not None, "Texts should not be None after loading."
+        return self._texts
+
+    @texts.setter
+    def texts(self, value: Sequence[str]):
+        self._texts = value
 
     @staticmethod
     def get(texts: Sequence[str], labels: np.ndarray, name: str, encoding_model: str) -> TextDataset:
@@ -848,7 +902,13 @@ class TextDataset:
         if os.path.exists(emb_dir):
             return TextDataset.from_dir(emb_dir)
         x = embed_texts(encoding_model, texts)
-        data = TextDataset(name=name, encoding_model=encoding_model, embeddings=x, labels=labels, texts=texts)
+        data = TextDataset(
+            name=name,
+            encoding_model=encoding_model,
+            _embeddings=x,
+            _labels=labels,
+            _texts=texts,
+        )
         data.persist()
         return data
 
@@ -877,17 +937,9 @@ class TextDataset:
     def from_dir(emb_dir: str) -> TextDataset:
         with open(f"{emb_dir}/metadata.json") as f:
             metadata = json.load(f)
-        embeddings = np.load(os.path.join(emb_dir, "embeddings.npy"))
-        embeddings = ensure_valid_embeddings(embeddings, source=f"cached embeddings in {emb_dir}")
-        df = pd.read_parquet(os.path.join(emb_dir, "data.parquet"))
-        texts = df["text"].tolist()
-        labels = df["label"].values
         return TextDataset(
             name=metadata["name"],
             encoding_model=metadata["encoding_model"],
-            embeddings=embeddings,
-            labels=labels,  # ty:ignore[invalid-argument-type]
-            texts=texts,
         )
 
     def __len__(self) -> int:

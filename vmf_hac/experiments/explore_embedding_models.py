@@ -1,3 +1,4 @@
+import gc
 import math
 import os
 from itertools import product
@@ -36,6 +37,7 @@ def run(
     x, y = dataset.embeddings, dataset.labels
     if split is not None:
         x, y = random_subset(x, y, n=1000, seed=split)
+        gc.collect()
     if n_clusters is None:
         n_clusters = int(np.unique(y).shape[0])
     clusterer: Clusterer = method_factory(n_clusters)
@@ -75,7 +77,7 @@ def embedding_models_over_k():
                     )
                 )
 
-    results = gather(jobs, show_progress=True)
+    results = gather(jobs, show_progress=True, backend="threading")
     df = pd.DataFrame(results)
     os.makedirs(ROOT_DIR / "results" / "data", exist_ok=True)
     df.to_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models_k.csv", index=False)

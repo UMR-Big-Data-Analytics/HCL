@@ -20,7 +20,7 @@ def gather[**P, V](
     n_jobs: int = -1,
     batch_size: int = 1,
     show_progress: bool = False,
-    backend: Literal["processes", "threads"] | None = None,
+    backend: Literal["loky", "multiprocessing", "sequential", "threading"] | None = None,
 ) -> list[V]:
     if show_progress:
         par = Parallel(n_jobs=n_jobs, backend=backend, batch_size=batch_size, return_as="generator")(jobs)
