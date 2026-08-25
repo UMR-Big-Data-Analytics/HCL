@@ -22,14 +22,12 @@ def main():
     config = get_config()
     # gammas = [0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     gammas = np.linspace(0.001, 1.0, 100).tolist()
-    n_splits = 25
     jobs = []
     for dataset_name in config["datasets"]:
         dataset = DatasetManager("intfloat/multilingual-e5-large").get(DatasetFactory.from_string(dataset_name))
-        for i in range(n_splits):
-            x, y = prepare_data(dataset.embeddings, dataset.labels, n=1000, seed=i)
-            for gamma in gammas:
-                jobs.append(run(x, y, gamma=gamma, dataset_name=dataset_name))
+        x, y = prepare_data(dataset.embeddings, dataset.labels, n=1000)
+        for gamma in gammas:
+            jobs.append(run(x, y, gamma=gamma, dataset_name=dataset_name))
 
     results = gather(jobs, show_progress=True)
     df = pd.DataFrame(results)

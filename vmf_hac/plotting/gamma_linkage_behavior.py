@@ -57,8 +57,8 @@ def main():
         )
         max_val = dataset_df["ari_vmf"].max() * 1.05
 
-        ward_df = dataset_df[["k", "ari_ward"]].drop_duplicates().sort_values("k")
-        ax.plot(ward_df["k"], ward_df["ari_ward"], color="black", linestyle="--", linewidth=0.9)
+        # ward_df = dataset_df[["k", "ari_ward"]].drop_duplicates().sort_values("k")
+        # ax.plot(ward_df["k"], ward_df["ari_ward"], color="black", linestyle="--", linewidth=0.9)
         ax.axvline(float(n_true_clusters), color="red", linestyle=":", linewidth=0.9)
 
         ax.set_xscale("log")

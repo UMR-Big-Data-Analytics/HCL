@@ -8,9 +8,9 @@ from critdd import Diagram, Diagrams
 from matplotlib import pyplot as plt
 
 from vmf_hac.definitions import ROOT_DIR
-from vmf_hac.entity.dataset import DatasetFactory
 from vmf_hac.plotting.consts import (
     categorical_palette,
+    dataset_display_name,
     figure_size,
     page_aspect_limit,
     save_figure,
@@ -87,6 +87,54 @@ def _plot_metric_table(
     plt.close(fig)
 
 
+def _write_metric_heatmap(
+    df: pd.DataFrame,
+    *,
+    metric: str,
+    statistic: str,
+) -> None:
+    dataset_order = sorted(df["dataset_label"].unique())
+    clusterer_order = _clusterer_order(df)
+    matrix = df.pivot_table(
+        index="dataset_label",
+        columns="clusterer_label",
+        values=metric,
+        aggfunc=statistic,  # ty:ignore[invalid-argument-type]
+    ).reindex(index=dataset_order, columns=clusterer_order)
+    matrix = matrix.fillna(0.0)
+    matrix.loc["Mean"] = matrix.mean(axis=0)
+
+    fig, ax = plt.subplots(figsize=figure_size(columns=1.8, aspect=1.0))  # ty:ignore[invalid-argument-type]
+    heatmap = sns.heatmap(
+        matrix,
+        cmap="viridis",
+        ax=ax,
+        square=False,
+        linewidths=0.0,
+        annot=True,
+        fmt=".2f",
+        annot_kws={"fontsize": 6},
+    )
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    ax.set_title("")
+    heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=90, ha="center", fontsize=7)
+    heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation=0, fontsize=8)
+    for tick in heatmap.get_yticklabels():
+        if tick.get_text() == "Mean":
+            tick.set_fontweight("bold")
+    cbar = heatmap.collections[0].colorbar
+    if cbar is not None:
+        cbar.set_label("")
+    fig.subplots_adjust(bottom=0.22, left=0.48, right=0.9, top=0.98)
+    fig.savefig(
+        ROOT_DIR / "results" / "plots" / f"datasets_{metric}_{statistic}_heatmap.pdf",
+        bbox_inches="tight",
+        pad_inches=0.02,
+    )
+    plt.close(fig)
+
+
 def _write_critical_difference_diagram(
     df: pd.DataFrame,
     *,
@@ -103,7 +151,6 @@ def _write_critical_difference_diagram(
         "alpha": 0.05,
         "adjustment": "holm",
         "reverse_x": True,
-        "axis_options": {"title": metric_label},
     }
     stem = f"datasets_{metric}_cd"
     diagram.to_file(ROOT_DIR / "results" / "tables" / f"{stem}.tex", **options)
@@ -163,10 +210,30 @@ def _write_2d_critical_difference_diagram(
     options = {
         "alpha": 0.05,
         "adjustment": "holm",
+        "preamble": "\n".join(
+            [
+                r"\definecolor{wardMarker}{HTML}{D55E00}",
+                r"\definecolor{vmfMarker}{HTML}{009E73}",
+            ]
+        ),
         "axis_options": {
+            "cycle list": ",".join(
+                [
+                    "{blue,mark=*}",
+                    "{red,mark=square*}",
+                    "{brown,mark=otimes*}",
+                    "{wardMarker,mark=triangle*,mark size=3.2pt}",
+                    "{blue,mark=diamond*}",
+                    "{red,mark=*}",
+                    "{brown,mark=square*}",
+                    "{vmfMarker,mark=pentagon*,mark size=3.2pt}",
+                    "{blue,mark=asterisk}",
+                ]
+            ),
             "width": r"\axisdefaultwidth",
             "height": r"2.2*\axisdefaultheight",
-            "title": metric_label,
+            "legend style": "draw=none,fill=none,at={(0.25, -0.05)},anchor=north,row sep=0.4cm,/tikz/every even column/.append style={column sep=0.5cm}",
+            "legend columns": "5",
         },
     }
     stem = f"datasets_{metric}_cd_2d"
@@ -180,8 +247,7 @@ def main() -> None:
     os.makedirs(ROOT_DIR / "results" / "tables", exist_ok=True)
 
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_datasets.csv")
-    fallback_labels = df["dataset_name"].str.rsplit("/").str[-1]
-    df["dataset_label"] = df["dataset_name"].map(DatasetFactory.get_dataset_name_map()).fillna(fallback_labels)
+    df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
     df["clusterer_label"] = df["clusterer_name"].map(CLUSTERER_LABELS).fillna(df["clusterer_name"])
 
     for metric, (metric_label, filename) in METRICS.items():
@@ -190,6 +256,16 @@ def main() -> None:
             metric=metric,
             metric_label=metric_label,
             filename=filename,
+        )
+        _write_metric_heatmap(
+            df,
+            metric=metric,
+            statistic="mean",
+        )
+        _write_metric_heatmap(
+            df,
+            metric=metric,
+            statistic="std",
         )
         _write_critical_difference_diagram(
             df,

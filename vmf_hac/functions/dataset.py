@@ -113,7 +113,7 @@ def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
         device=_get_device(),
         # model_kwargs={"device_map": "auto"},
         model_kwargs={
-            "dtype": "float64",
+            "dtype": "float32",
         },
     )
 

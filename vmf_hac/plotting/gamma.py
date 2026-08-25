@@ -14,6 +14,7 @@ def main():
 
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_gamma.csv")
     df["gamma"] = df["params"].apply(lambda p: eval(p)["gamma"])
+
     df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
     df_mean = df[["gamma", "ari", "v_measure"]].groupby(["gamma"]).mean().sort_index()
     dataset_labels = sorted(df["dataset_label"].unique().tolist())

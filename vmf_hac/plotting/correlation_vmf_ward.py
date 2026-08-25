@@ -17,7 +17,7 @@ from vmf_hac.plotting.consts import (
 
 def main():
     setup_publication_style()
-    n_markers = 20
+    # n_markers = 20
     datasets = [
         TextDatasets.BUILT_BENCH_CLUSTERING_P2P,
         TextDatasets.DBPEDIA_14,
@@ -30,11 +30,11 @@ def main():
     df = df[df["dataset_name"].isin(dataset_names)]
     df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
     df_mean = df.groupby(["dataset_label", "gamma"], as_index=False).mean(numeric_only=True)
-    gammas = sorted(df_mean["gamma"].unique().tolist())
-    new_gammas = []
-    for i in range(n_markers):
-        new_gammas.append(gammas[int(i * len(gammas) / n_markers)])
-    df_mean = df_mean[df_mean["gamma"].isin(new_gammas)]
+    # gammas = sorted(df_mean["gamma"].unique().tolist())
+    # new_gammas = []
+    # for i in range(n_markers):
+    #    new_gammas.append(gammas[int(i * len(gammas) / n_markers)])
+    # df_mean = df_mean[df_mean["gamma"].isin(new_gammas)]
 
     plot_df = df_mean[df_mean["gamma"] <= 1].copy()
 
@@ -45,22 +45,21 @@ def main():
 
     fig, ax = plt.subplots(figsize=figure_size(columns=1, aspect=0.8), layout="constrained")
 
-    sns.scatterplot(
+    sns.lineplot(
         data=plot_df,
         x="gamma",
         y="pearson_corr",
         hue="dataset_label",
         hue_order=labels,
         style="dataset_label",
-        markers=marker_map,
+        # markers=marker_map,
         palette=palette,
-        s=18,
-        edgecolor="none",
+        # edgecolor="none",
         ax=ax,
     )
 
     ax.set_xlabel(r"$\gamma$")
-    ax.set_ylabel("Cophenetic correlation")
+    ax.set_ylabel("Cophenetic Correlation")
     handles, legend_labels = ax.get_legend_handles_labels()
     if ax.get_legend() is not None:
         ax.get_legend().remove()  # ty:ignore[unresolved-attribute]
@@ -76,8 +75,11 @@ def main():
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=figure_size(columns=1, aspect=0.8), layout="constrained")
+    df_skew = df.groupby(["dataset_label", "gamma"], as_index=False).mean(numeric_only=True)
+    df_skew = df_skew[df_skew["gamma"] <= 0.1]
+
     sns.lineplot(
-        data=plot_df,
+        data=df_skew,
         x="gamma",
         y="vmf_cluster_skew",
         hue="dataset_label",
@@ -88,10 +90,8 @@ def main():
         ax=ax,
     )
     ax.set_xlabel(r"$\gamma$")
-    ax.set_ylabel("Skewness")
-    ward_skew_per_dataset = plot_df.groupby("dataset_label")["ward_cluster_skew"].mean()
-    for dataset_label, ward_skew in ward_skew_per_dataset.items():
-        ax.axhline(y=ward_skew, color=palette[dataset_label], linestyle="--", linewidth=1)  # ty:ignore[invalid-argument-type]
+    ax.set_ylabel("Cluster Skewness")
+
     handles, legend_labels = ax.get_legend_handles_labels()
     if ax.get_legend() is not None:
         ax.get_legend().remove()  # ty:ignore[unresolved-attribute]

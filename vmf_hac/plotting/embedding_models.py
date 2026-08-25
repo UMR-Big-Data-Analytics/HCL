@@ -30,7 +30,7 @@ CLUSTERER_LABELS = {
 }
 
 MODEL_LABELS = {
-    "intfloat/multilingual-e5-large": "mE5-large",
+    "intfloat/multilingual-e5-large": "multilingual-e5-large",
     "Qwen/Qwen3-Embedding-8B": "Qwen3-Emb-8B",
     "codefuse-ai/F2LLM-v2-14B": "F2LLM-v2-14B",
 }
@@ -111,7 +111,7 @@ def main():
     setup_publication_style()
     os.makedirs(ROOT_DIR / "results" / "plots", exist_ok=True)
 
-    df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models.csv")
+    df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models_k.csv")
     df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
     df["clusterer_label"] = df["clusterer_name"].map(CLUSTERER_LABELS).fillna(df["clusterer_name"])
     df["model_label"] = df["model_name"].map(MODEL_LABELS).fillna(df["model_name"])

@@ -11,14 +11,34 @@ from vmf_hac.baselines import VonMisesFisherMixture
 from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.entity import DatasetManager, TextDatasets
 from vmf_hac.entity.clusterer import Clusterer
+from vmf_hac.entity.dataset import DatasetFactory
 from vmf_hac.experiments.methods import METHODS
 from vmf_hac.utils import evaluate
 from vmf_hac.utils.config import get_config
+from vmf_hac.utils.data import random_subset
 from vmf_hac.utils.parallel import gather, task
+
+METHOD_FACTORIES = dict(METHODS)
 
 
 @task
-def run(clusterer: Clusterer, x: np.ndarray, y: np.ndarray, dataset_name: str, model_name: str) -> dict[str, Any]:
+def run(
+    method_name: str,
+    dataset_id: str,
+    dataset_name: str,
+    model_name: str,
+    *,
+    split: int | None = None,
+    n_clusters: int | None = None,
+) -> dict[str, Any]:
+    method_factory = METHOD_FACTORIES[method_name]
+    dataset = DatasetManager(model_name).get(DatasetFactory.from_string(dataset_id))
+    x, y = dataset.embeddings, dataset.labels
+    if split is not None:
+        x, y = random_subset(x, y, n=1000, seed=split)
+    if n_clusters is None:
+        n_clusters = int(np.unique(y).shape[0])
+    clusterer: Clusterer = method_factory(n_clusters)
     if isinstance(clusterer, AgglomerativeClustering):
         clusterer_name = f"{clusterer.__class__.__name__}_{clusterer.linkage}"
     elif isinstance(clusterer, VonMisesFisherMixture):
@@ -26,10 +46,10 @@ def run(clusterer: Clusterer, x: np.ndarray, y: np.ndarray, dataset_name: str, m
     else:
         clusterer_name = clusterer.__class__.__name__
     result = evaluate(clusterer, dataset_name, x, y, clusterer_name)
-    return {**result.to_dict(), "model_name": model_name}
+    return {**result.to_dict(), "model_name": model_name, "split": split}
 
 
-def main():
+def embedding_models_over_k():
     config = get_config()
     jobs = []
 
@@ -40,13 +60,43 @@ def main():
         (TextDatasets.WIKICITIES, "WikiCities"),
     ]
     for (dataset, dataset_name), model_name in product(datasets, config["models"]):
-        dataset = DatasetManager(model_name).get(dataset)
-        x, y = dataset.embeddings, dataset.labels
+        dataset_data = DatasetManager(model_name).get(dataset)
+        y = dataset_data.labels
         true_k = np.unique(y).shape[0]
-        for _, method_factory in METHODS:
+        for method_name, _ in METHODS:
             for k in np.arange(2, 2 * true_k, math.ceil(true_k / 10)):
-                method = method_factory(k)
-                jobs.append(run(method, x, y, dataset_name, model_name))
+                jobs.append(
+                    run(
+                        method_name=method_name,
+                        dataset_id=dataset.value.technical_name,
+                        dataset_name=dataset_name,
+                        model_name=model_name,
+                        n_clusters=int(k),
+                    )
+                )
+
+    results = gather(jobs, show_progress=True)
+    df = pd.DataFrame(results)
+    os.makedirs(ROOT_DIR / "results" / "data", exist_ok=True)
+    df.to_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models_k.csv", index=False)
+
+
+def embedding_models():
+    config = get_config()
+    jobs = []
+    splits = 5
+    for dataset_name, model_name in product(config["datasets"], config["models"]):
+        for split in range(splits):
+            for method_name, _ in METHODS:
+                jobs.append(
+                    run(
+                        method_name=method_name,
+                        dataset_id=dataset_name,
+                        dataset_name=dataset_name,
+                        model_name=model_name,
+                        split=split,
+                    )
+                )
 
     results = gather(jobs, show_progress=True)
     df = pd.DataFrame(results)
@@ -55,4 +105,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    embedding_models()
+    # embedding_models_over_k()

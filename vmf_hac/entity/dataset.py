@@ -515,9 +515,7 @@ class TextDatasets(Enum):
       year = {2024},
     }
     """
-    WIKIPEDIA_CHEMISTRY_TOPIC_CLUSTERING = DatasetInfo(
-        "BASF-AI/WikipediaEasy10Clustering", "WikipediaChemistryTopicClustering"
-    )
+    WIKIPEDIA_CHEMISTRY_TOPIC_CLUSTERING = DatasetInfo("BASF-AI/WikipediaEasy10Clustering", "WikipediaEasy10Clustering")
     r"""
     @article{kasmaee2024chemteb,
       author = {Kasmaee, Ali Shiraee and Khodadad, Mohammad and Saloot, Mohammad Arshi and Sherck, Nick and Dokas, Stephen and Mahyar, Hamidreza and Samiee, Soheila},
@@ -527,7 +525,7 @@ class TextDatasets(Enum):
     }
     """
     WIKIPEDIA_SPECIALITIES_IN_CHEMISTRY_TOPIC_CLUSTERING = DatasetInfo(
-        "BASF-AI/WikipediaMedium5Clustering", "WikipediaSpecialitiesInChemistry"
+        "BASF-AI/WikipediaMedium5Clustering", "WikipediaMedium5Clustering"
     )
     TWENTY_NEWSGROUPS_CLUSTERING = DatasetInfo("mteb/twentynewsgroups-clustering", "20NewsgroupsClustering")
     WIKI_CLUSTERING_P2P_V2 = DatasetInfo("mteb/WikiClusteringP2P.v2", "WikiClusteringP2PV2")

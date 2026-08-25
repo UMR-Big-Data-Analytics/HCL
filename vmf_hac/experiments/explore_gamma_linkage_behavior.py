@@ -59,7 +59,7 @@ def main():
         (TextDatasets.DBPEDIA_14, "DBPedia"),
         (TextDatasets.BUILT_BENCH_CLUSTERING_P2P, "BuiltBenchP2P"),
         (TextDatasets.CLUSTREC_COVID, "ClusTREC-Covid"),
-        (TextDatasets.WIKICITIES, "WikiCities"),
+        (TextDatasets.WIKICITIES, "Wikicities"),
     ]
 
     manager = DatasetManager(model_name)
