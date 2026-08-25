@@ -95,6 +95,24 @@ def _initial_batch_size(model_name: str) -> int:
     return 32
 
 
+def _load_encoder(encoding_model: str) -> SentenceTransformer:
+    enc = SentenceTransformer(
+        encoding_model,
+        trust_remote_code=True,
+        device=_get_device(),
+        model_kwargs={
+            "dtype": "float32",
+        },
+    )
+    max_seq_length = _max_seq_length()
+    if enc.max_seq_length is None or enc.max_seq_length > max_seq_length:
+        logging.getLogger(__name__).info(
+            "Capping max_seq_length from %s to %d for model=%s", enc.max_seq_length, max_seq_length, encoding_model
+        )
+        enc.max_seq_length = max_seq_length
+    return enc
+
+
 def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
     """
     Encode texts with automatic OOM recovery by shrinking batch size.
@@ -108,52 +126,44 @@ def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
 
     _empty_device_cache()
 
-    enc = SentenceTransformer(
-        encoding_model,
-        trust_remote_code=True,
-        device=_get_device(),
-        # model_kwargs={"device_map": "auto"},
-        model_kwargs={
-            "dtype": "float32",
-        },
-    )
+    enc = _load_encoder(encoding_model)
 
-    max_seq_length = _max_seq_length()
-    if enc.max_seq_length is None or enc.max_seq_length > max_seq_length:
-        logger.info(
-            "Capping max_seq_length from %s to %d for model=%s", enc.max_seq_length, max_seq_length, encoding_model
-        )
-        enc.max_seq_length = max_seq_length
-
-    while batch_size >= 1:
-        try:
-            logger.info(
-                "Encoding %d texts with model=%s batch_size=%d",
-                len(prepared_texts),
-                encoding_model,
-                batch_size,
-            )
-            embeddings = enc.encode_document(
-                prepared_texts,
-                batch_size=batch_size,
-                show_progress_bar=True,
-                convert_to_numpy=True,
-            )
-            return ensure_valid_embeddings(embeddings, source=f"model={encoding_model}")  # ty:ignore[invalid-argument-type]
-        except (torch.OutOfMemoryError, RuntimeError) as exc:
-            if not _is_out_of_memory(exc):
-                raise
-            logger.warning(
-                "Out of memory for model=%s batch_size=%d (%s); retrying with smaller batch size",
-                encoding_model,
-                batch_size,
-                exc,
-            )
-            gc.collect()
-            _empty_device_cache()
-            if batch_size == 1:
-                raise
-            batch_size = max(1, batch_size // 2)
+    try:
+        while batch_size >= 1:
+            try:
+                logger.info(
+                    "Encoding %d texts with model=%s batch_size=%d",
+                    len(prepared_texts),
+                    encoding_model,
+                    batch_size,
+                )
+                embeddings = enc.encode_document(
+                    prepared_texts,
+                    batch_size=batch_size,
+                    show_progress_bar=True,
+                    convert_to_numpy=True,
+                )
+                return ensure_valid_embeddings(embeddings, source=f"model={encoding_model}")  # ty:ignore[invalid-argument-type]
+            except (torch.OutOfMemoryError, RuntimeError) as exc:
+                if not _is_out_of_memory(exc):
+                    raise
+                if batch_size == 1:
+                    raise
+                batch_size = max(1, batch_size // 2)
+                logger.warning(
+                    "Out of memory for model=%s; retrying with batch_size=%d (%s)",
+                    encoding_model,
+                    batch_size,
+                    exc,
+                )
+                del enc
+                gc.collect()
+                _empty_device_cache()
+                enc = _load_encoder(encoding_model)
+    finally:
+        del enc
+        gc.collect()
+        _empty_device_cache()
 
     raise RuntimeError(f"Failed to encode texts for model={encoding_model}")
 
