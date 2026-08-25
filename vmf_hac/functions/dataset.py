@@ -52,6 +52,21 @@ def _empty_device_cache() -> None:
         torch.mps.empty_cache()
 
 
+def _unload_encoder(enc: SentenceTransformer) -> None:
+    """Move model to CPU before deleting to force immediate CUDA memory release.
+
+    PyTorch modules often contain circular references, so del+gc alone may not
+    release GPU memory synchronously. Moving to CPU first is the reliable path.
+    """
+    try:
+        enc.to("cpu")
+    except Exception:
+        pass
+    del enc
+    gc.collect()
+    _empty_device_cache()
+
+
 def _is_out_of_memory(exc: BaseException) -> bool:
     if isinstance(exc, torch.OutOfMemoryError):
         return True
@@ -156,14 +171,10 @@ def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
                     batch_size,
                     exc,
                 )
-                del enc
-                gc.collect()
-                _empty_device_cache()
+                _unload_encoder(enc)
                 enc = _load_encoder(encoding_model)
     finally:
-        del enc
-        gc.collect()
-        _empty_device_cache()
+        _unload_encoder(enc)
 
     raise RuntimeError(f"Failed to encode texts for model={encoding_model}")
 
