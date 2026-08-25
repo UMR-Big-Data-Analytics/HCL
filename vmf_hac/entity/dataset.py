@@ -847,7 +847,11 @@ class TextDataset:
         if self._embeddings is None:
             emb_dir = get_emb_dir(self.name, self.encoding_model)
             if os.path.exists(emb_dir):
-                embeddings = np.load(os.path.join(emb_dir, "embeddings.npy"))
+                # mmap_mode='r': the OS maps the file into address space without
+                # copying it.  Multiple processes opening the same .npy file share
+                # the underlying physical pages (OS page cache), so N workers on the
+                # same dataset do not multiply RAM usage by N.
+                embeddings = np.load(os.path.join(emb_dir, "embeddings.npy"), mmap_mode="r")
                 self._embeddings = ensure_valid_embeddings(embeddings, source=f"cached embeddings in {emb_dir}")
             else:
                 raise ValueError(
@@ -961,7 +965,9 @@ class DatasetManager:
 
     _cache: ClassVar[dict[tuple[TextDatasets, str], TextDataset]] = {}
 
-    def get(self, dataset_id: TextDatasets) -> TextDataset:
+    def get(self, dataset_id: TextDatasets, skip_cache: bool = False) -> TextDataset:
+        if skip_cache:
+            return self._get_dataset(dataset_id, self.encoding_model)
         cache_key = (dataset_id, self.encoding_model)
         if cache_key not in self._cache:
             dataset = self._get_dataset(dataset_id, self.encoding_model)

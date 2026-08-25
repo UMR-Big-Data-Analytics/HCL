@@ -33,7 +33,7 @@ def run(
     n_clusters: int | None = None,
 ) -> dict[str, Any]:
     method_factory = METHOD_FACTORIES[method_name]
-    dataset = DatasetManager(model_name).get(DatasetFactory.from_string(dataset_id))
+    dataset = DatasetManager(model_name).get(DatasetFactory.from_string(dataset_id), skip_cache=True)
     x, y = dataset.embeddings, dataset.labels
     if split is not None:
         x, y = random_subset(x, y, n=1000, seed=split)
@@ -62,9 +62,11 @@ def embedding_models_over_k():
         (TextDatasets.WIKICITIES, "WikiCities"),
     ]
     for (dataset, dataset_name), model_name in product(datasets, config["models"]):
-        dataset_data = DatasetManager(model_name).get(dataset)
-        y = dataset_data.labels
+        # Load only labels in the main process (embeddings stay mmap'd on demand in workers).
+        y = DatasetManager(model_name).get(dataset).labels
         true_k = np.unique(y).shape[0]
+        # Free the label array; the TextDataset shell stays cached but is cheap.
+        del y
         for method_name, _ in METHODS:
             for k in np.arange(2, 2 * true_k, math.ceil(true_k / 10)):
                 jobs.append(
@@ -77,7 +79,10 @@ def embedding_models_over_k():
                     )
                 )
 
-    results = gather(jobs, show_progress=True, backend="threading")
+    # Use the default loky (process) backend so workers are not limited by the GIL.
+    # With mmap_mode='r' in TextDataset.embeddings the OS page cache is shared
+    # across worker processes, so the embedding arrays are not duplicated in RAM.
+    results = gather(jobs, show_progress=True)
     df = pd.DataFrame(results)
     os.makedirs(ROOT_DIR / "results" / "data", exist_ok=True)
     df.to_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models_k.csv", index=False)

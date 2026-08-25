@@ -60,7 +60,8 @@ def _is_out_of_memory(exc: BaseException) -> bool:
 
 
 def ensure_valid_embeddings(x: np.ndarray, source: str) -> np.ndarray:
-    x = np.asarray(x, dtype=np.float64)
+    # Do NOT upcast here - keep the original dtype (typically float32).
+    # Callers that require float64 (e.g. VmfHAC.fit) cast locally.
     if not np.isfinite(x).all():
         n_bad_rows = int((~np.isfinite(x)).any(axis=1).sum())
         raise ValueError(
