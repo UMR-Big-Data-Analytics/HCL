@@ -4,10 +4,12 @@ import os
 import re
 import unicodedata
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import torch.mps
 from sentence_transformers import SentenceTransformer
+from transformers import BitsAndBytesConfig
 
 from vmf_hac.definitions import DATA_DIR
 
@@ -52,21 +54,6 @@ def _empty_device_cache() -> None:
         torch.mps.empty_cache()
 
 
-def _unload_encoder(enc: SentenceTransformer) -> None:
-    """Move model to CPU before deleting to force immediate CUDA memory release.
-
-    PyTorch modules often contain circular references, so del+gc alone may not
-    release GPU memory synchronously. Moving to CPU first is the reliable path.
-    """
-    try:
-        enc.to("cpu")
-    except Exception:
-        pass
-    del enc
-    gc.collect()
-    _empty_device_cache()
-
-
 def _is_out_of_memory(exc: BaseException) -> bool:
     if isinstance(exc, torch.OutOfMemoryError):
         return True
@@ -103,21 +90,45 @@ def _max_seq_length() -> int:
 
 def _initial_batch_size(model_name: str) -> int:
     name = model_name.lower()
-    # if any(x in name for x in ("27b", "14b", "12b", "8b")):
-    #    return 2
+    if _parameter_count_billions(name) >= 8:
+        return 1
     if "large" in name:
         return 8
     return 32
 
 
+def _parameter_count_billions(model_name: str) -> float:
+    match = re.search(r"(?:^|[-_/])(\d+(?:\.\d+)?)b(?:$|[-_/])", model_name.lower())
+    return float(match.group(1)) if match else 0
+
+
+def _model_kwargs(encoding_model: str) -> dict[str, Any]:
+    if not torch.cuda.is_available():
+        return {"dtype": torch.float32}
+
+    compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    kwargs: dict[str, Any] = {"dtype": compute_dtype}
+    if _parameter_count_billions(encoding_model) >= 12:
+        kwargs["quantization_config"] = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=compute_dtype,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+        )
+        kwargs["device_map"] = {"": 0}
+    return kwargs
+
+
 def _load_encoder(encoding_model: str) -> SentenceTransformer:
+    model_kwargs = _model_kwargs(encoding_model)
+    if "quantization_config" in model_kwargs:
+        logging.getLogger(__name__).info("Loading model=%s with 4-bit quantization", encoding_model)
+
     enc = SentenceTransformer(
         encoding_model,
         trust_remote_code=True,
         device=_get_device(),
-        model_kwargs={
-            "dtype": "float32",
-        },
+        model_kwargs=model_kwargs,
     )
     max_seq_length = _max_seq_length()
     if enc.max_seq_length is None or enc.max_seq_length > max_seq_length:
@@ -141,9 +152,9 @@ def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
 
     _empty_device_cache()
 
-    enc = _load_encoder(encoding_model)
-
+    enc: SentenceTransformer | None = None
     try:
+        enc = _load_encoder(encoding_model)
         while batch_size >= 1:
             try:
                 logger.info(
@@ -171,10 +182,13 @@ def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
                     batch_size,
                     exc,
                 )
-                _unload_encoder(enc)
-                enc = _load_encoder(encoding_model)
+                gc.collect()
+                _empty_device_cache()
     finally:
-        _unload_encoder(enc)
+        if enc is not None:
+            del enc
+        gc.collect()
+        _empty_device_cache()
 
     raise RuntimeError(f"Failed to encode texts for model={encoding_model}")
 
