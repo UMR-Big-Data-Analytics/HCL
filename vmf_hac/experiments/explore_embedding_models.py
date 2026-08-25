@@ -1,7 +1,6 @@
 import gc
 import math
 import os
-from itertools import product
 from typing import Any
 
 import numpy as np
@@ -53,6 +52,7 @@ def run(
 
 def embedding_models_over_k():
     config = get_config()
+    all_results = []
     jobs = []
 
     datasets = [
@@ -61,52 +61,64 @@ def embedding_models_over_k():
         (TextDatasets.CLUSTREC_COVID, "ClusTREC-Covid"),
         (TextDatasets.WIKICITIES, "WikiCities"),
     ]
-    for (dataset, dataset_name), model_name in product(datasets, config["models"]):
-        # Load only labels in the main process (embeddings stay mmap'd on demand in workers).
-        y = DatasetManager(model_name).get(dataset).labels
-        true_k = np.unique(y).shape[0]
-        # Free the label array; the TextDataset shell stays cached but is cheap.
-        del y
-        for method_name, _ in METHODS:
-            for k in np.arange(2, 2 * true_k, math.ceil(true_k / 10)):
-                jobs.append(
-                    run(
-                        method_name=method_name,
-                        dataset_id=dataset.value.technical_name,
-                        dataset_name=dataset_name,
-                        model_name=model_name,
-                        n_clusters=int(k),
+    for i, (dataset, dataset_name) in enumerate(datasets):
+        for model_name in config["models"]:
+            # Load only labels in the main process (embeddings stay mmap'd on demand in workers).
+            y = DatasetManager(model_name).get(dataset).labels
+            true_k = np.unique(y).shape[0]
+            # Free the label array; the TextDataset shell stays cached but is cheap.
+            del y
+            for method_name, _ in METHODS:
+                for k in np.arange(2, 2 * true_k, math.ceil(true_k / 10)):
+                    jobs.append(
+                        run(
+                            method_name=method_name,
+                            dataset_id=dataset.value.technical_name,
+                            dataset_name=dataset_name,
+                            model_name=model_name,
+                            n_clusters=int(k),
+                        )
                     )
-                )
 
-    # Use the default loky (process) backend so workers are not limited by the GIL.
-    # With mmap_mode='r' in TextDataset.embeddings the OS page cache is shared
-    # across worker processes, so the embedding arrays are not duplicated in RAM.
-    results = gather(jobs, show_progress=True)
-    df = pd.DataFrame(results)
+        # Use the default loky (process) backend so workers are not limited by the GIL.
+        # With mmap_mode='r' in TextDataset.embeddings the OS page cache is shared
+        # across worker processes, so the embedding arrays are not duplicated in RAM.
+        if i % 5 == 0:
+            results = gather(jobs, show_progress=True)
+            all_results.extend(results)
+            jobs = []
+    df = pd.DataFrame(all_results)
     os.makedirs(ROOT_DIR / "results" / "data", exist_ok=True)
     df.to_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models_k.csv", index=False)
 
 
 def embedding_models():
     config = get_config()
+    all_results = []
     jobs = []
     splits = 5
-    for dataset_name, model_name in product(config["datasets"], config["models"]):
-        for split in range(splits):
-            for method_name, _ in METHODS:
-                jobs.append(
-                    run(
-                        method_name=method_name,
-                        dataset_id=dataset_name,
-                        dataset_name=dataset_name,
-                        model_name=model_name,
-                        split=split,
+    for i, dataset_name in enumerate(config["datasets"]):
+        for model_name in config["models"]:
+            for split in range(splits):
+                for method_name, _ in METHODS:
+                    jobs.append(
+                        run(
+                            method_name=method_name,
+                            dataset_id=dataset_name,
+                            dataset_name=dataset_name,
+                            model_name=model_name,
+                            split=split,
+                        )
                     )
-                )
+
+        if i % 5 == 0:
+            results = gather(jobs, show_progress=True)
+            all_results.extend(results)
+            jobs = []
 
     results = gather(jobs, show_progress=True)
-    df = pd.DataFrame(results)
+    all_results.extend(results)
+    df = pd.DataFrame(all_results)
     os.makedirs(ROOT_DIR / "results" / "data", exist_ok=True)
     df.to_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models.csv", index=False)
 
