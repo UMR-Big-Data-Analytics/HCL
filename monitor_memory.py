@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Monitor the RSS memory of a process tree and kill it if it exceeds a threshold.
+Monitor system-wide used RAM and kill a target process when it exceeds a threshold.
 
 Usage:
     python monitor_memory.py <pid> [--limit-gb 200] [--interval 5]
@@ -24,15 +24,10 @@ except ImportError:
 BYTES_PER_GB = 1024**3
 
 
-def rss_gb(pid: int) -> float:
-    """Return total RSS (GiB) of the process and all its children."""
-    try:
-        root = psutil.Process(pid)
-        procs = [root, *root.children(recursive=True)]
-        total = sum(p.memory_info().rss for p in procs if p.is_running())
-        return total / BYTES_PER_GB
-    except psutil.NoSuchProcess:
-        return 0.0
+def system_used_gb() -> tuple[float, float]:
+    """Return (used_GiB, total_GiB) of physical RAM (excludes reclaimable cache/buffers)."""
+    vm = psutil.virtual_memory()
+    return vm.used / BYTES_PER_GB, vm.total / BYTES_PER_GB
 
 
 def kill_tree(pid: int) -> None:
@@ -56,9 +51,12 @@ def kill_tree(pid: int) -> None:
 
 
 def monitor(pid: int, limit_gb: float, interval: float) -> None:
-    print(f"Monitoring PID {pid} | limit={limit_gb} GiB | interval={interval}s")
-    print(f"{'Time':>10}  {'RSS (GiB)':>12}  {'Limit (GiB)':>12}")
-    print("-" * 40)
+    _, total_gb = system_used_gb()
+    print(
+        f"Monitoring PID {pid} | system RAM={total_gb:.1f} GiB | kill threshold={limit_gb} GiB | interval={interval}s"
+    )
+    print(f"{'Time':>10}  {'Used (GiB)':>12}  {'Total (GiB)':>12}  {'Used %':>8}")
+    print("-" * 50)
 
     try:
         while True:
@@ -66,12 +64,13 @@ def monitor(pid: int, limit_gb: float, interval: float) -> None:
                 print(f"\nPID {pid} no longer exists — exiting monitor.")
                 break
 
-            usage = rss_gb(pid)
+            used_gb, total_gb = system_used_gb()
+            pct = 100 * used_gb / total_gb if total_gb > 0 else 0
             timestamp = time.strftime("%H:%M:%S")
-            print(f"{timestamp:>10}  {usage:>12.2f}  {limit_gb:>12.1f}", flush=True)
+            print(f"{timestamp:>10}  {used_gb:>12.2f}  {total_gb:>12.1f}  {pct:>7.1f}%", flush=True)
 
-            if usage >= limit_gb:
-                print(f"\n⚠️  Memory limit exceeded ({usage:.2f} GiB >= {limit_gb} GiB). Killing PID {pid}...")
+            if used_gb >= limit_gb:
+                print(f"\n⚠️  System memory limit exceeded ({used_gb:.2f} GiB >= {limit_gb} GiB). Killing PID {pid}...")
                 kill_tree(pid)
                 print("Process killed.")
                 sys.exit(1)
@@ -83,11 +82,15 @@ def monitor(pid: int, limit_gb: float, interval: float) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Memory monitor / watchdog.")
+    parser = argparse.ArgumentParser(
+        description="System memory watchdog — kills a process when system RAM exceeds a threshold."
+    )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("pid", nargs="?", type=int, help="PID of an already-running process.")
     group.add_argument("--cmd", type=str, help="Shell command to launch and monitor.")
-    parser.add_argument("--limit-gb", type=float, default=200.0, help="RSS limit in GiB (default: 200)")
+    parser.add_argument(
+        "--limit-gb", type=float, default=200.0, help="System used-RAM kill threshold in GiB (default: 200)"
+    )
     parser.add_argument("--interval", type=float, default=5.0, help="Polling interval in seconds (default: 5)")
     args = parser.parse_args()
 
