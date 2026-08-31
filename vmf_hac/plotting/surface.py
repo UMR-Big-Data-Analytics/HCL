@@ -237,7 +237,7 @@ def main():
         aspect=30,
     )
     cbar.set_label("$\\Delta=\\mathrm{LR}(A,B) - \\mathrm{LR}(A,C)$")
-    # _fit_square_grid_height(fig, axes)
+    _fit_square_grid_height(fig, axes)
     save_figure(fig, ROOT_DIR / "results" / "plots" / "LR_surface_N_B_vary.pdf")
     plt.close(fig)
 
