@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+set -e
+
+# Resolve the project root (where pyproject.toml lives)
+ROOT="$(git rev-parse --show-toplevel)"
+VENV="$ROOT/.venv/bin"
+
+echo "→ ruff check" --fix
+"$VENV/ruff" check "$ROOT" --fix
+
+echo "→ ruff format"
+"$VENV/ruff" format "$ROOT"
+
+echo "→ ty check"
+"$VENV/ty" check "$ROOT"
