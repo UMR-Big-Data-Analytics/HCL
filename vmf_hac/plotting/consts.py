@@ -38,12 +38,12 @@ CLUSTERER_LABELS: dict[str, str] = {
     "VmfHAC": "vMF-HAC",
     "AgglomerativeClustering_ward": "Ward",
     "AgglomerativeClustering_single": "Single",
-    "AgglomerativeClustering_complete": "Complete",
     "AgglomerativeClustering_average": "Average",
-    "VonMisesFisherMixture_soft": "moVMF",
-    "SphericalKMeans": "Spherical KM",
+    "AgglomerativeClustering_complete": "Complete",
     "KMeans": "K-Means",
+    "SphericalKMeans": "Spherical KM",
     "SpectralClustering": "Spectral",
+    "VonMisesFisherMixture_soft": "moVMF",
 }
 
 

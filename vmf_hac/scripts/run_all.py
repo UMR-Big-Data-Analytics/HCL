@@ -17,7 +17,6 @@ PLOTTING_MODULES = [
     "vmf_hac.plotting.gamma_linkage_behavior",
     "vmf_hac.plotting.surface",
     "vmf_hac.plotting.embedding_models",
-    "vmf_hac.plotting.embedding_models_ranks",
 ]
 
 
