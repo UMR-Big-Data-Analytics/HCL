@@ -8,26 +8,16 @@ from matplotlib import pyplot as plt
 
 from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.plotting.consts import (
+    CLUSTERER_LABELS,
     DATASET_ORDER,
     categorical_palette,
+    clusterer_label_order,
     dataset_display_name,
     figure_size,
     page_aspect_limit,
     save_figure,
     setup_publication_style,
 )
-
-CLUSTERER_LABELS = {
-    "AgglomerativeClustering_average": "Average",
-    "AgglomerativeClustering_complete": "Complete",
-    "AgglomerativeClustering_single": "Single",
-    "AgglomerativeClustering_ward": "Ward",
-    "KMeans": "K-Means",
-    "SpectralClustering": "Spectral",
-    "SphericalKMeans": "Spherical KM",
-    "VmfHAC": "vMF-HAC",
-    "VonMisesFisherMixture_soft": "moVMF",
-}
 
 MODEL_LABELS = {
     "intfloat/multilingual-e5-large": "multilingual-e5-large",
@@ -37,9 +27,7 @@ MODEL_LABELS = {
 
 
 def _plot_grid(df: pd.DataFrame, *, normalize: bool, filename: str) -> None:
-    clusterer_order = [
-        CLUSTERER_LABELS[name] for name in CLUSTERER_LABELS if name in set(df["clusterer_name"].unique())
-    ]
+    clusterer_order = clusterer_label_order(set(df["clusterer_name"].unique()))
     clusterer_palette = categorical_palette(clusterer_order)
     model_order = [MODEL_LABELS[name] for name in MODEL_LABELS if name in set(df["model_name"].unique())]
     dataset_order = [label for label in DATASET_ORDER if label in set(df["dataset_label"])]

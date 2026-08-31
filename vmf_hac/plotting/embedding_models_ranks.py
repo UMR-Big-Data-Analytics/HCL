@@ -15,14 +15,16 @@ from scipy.stats import friedmanchisquare
 
 from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.plotting.consts import (
+    CLUSTERER_LABELS,
     DATASET_ORDER,
     categorical_palette,
+    clusterer_label_order,
     dataset_display_name,
     figure_size,
     save_figure,
     setup_publication_style,
 )
-from vmf_hac.plotting.embedding_models import CLUSTERER_LABELS, MODEL_LABELS
+from vmf_hac.plotting.embedding_models import MODEL_LABELS
 
 # Studentized range statistic divided by sqrt(2) at alpha = 0.05, indexed by the number
 # of compared algorithms (Demsar 2006, Table 5).
@@ -72,7 +74,7 @@ def load_scores() -> pd.DataFrame:
 
 
 def _orders(scores: pd.DataFrame) -> tuple[list[str], list[str], list[str]]:
-    clusterer_order = [label for label in CLUSTERER_LABELS.values() if label in set(scores["clusterer"])]
+    clusterer_order = clusterer_label_order(set(scores["clusterer"]))
     model_order = [label for label in MODEL_LABELS.values() if label in set(scores["model"])]
     dataset_order = [label for label in DATASET_ORDER if label in set(scores["dataset"])]
     return clusterer_order, model_order, dataset_order

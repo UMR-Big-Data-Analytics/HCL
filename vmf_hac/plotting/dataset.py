@@ -9,14 +9,16 @@ from matplotlib import pyplot as plt
 
 from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.plotting.consts import (
+    CLUSTERER_LABELS,
     categorical_palette,
+    clusterer_label_order,
     dataset_display_name,
     figure_size,
     page_aspect_limit,
     save_figure,
     setup_publication_style,
 )
-from vmf_hac.plotting.embedding_models import CLUSTERER_LABELS
+from vmf_hac.plotting.latex_table import style_top3_latex
 
 METRICS = {
     "v_measure": ("V-Measure", "datasets_v_measure.pdf"),
@@ -26,9 +28,8 @@ LANDSCAPE_ASPECT = 1 / np.sqrt(2)
 
 
 def _clusterer_order(df: pd.DataFrame) -> list[str]:
-    order = [CLUSTERER_LABELS[name] for name in CLUSTERER_LABELS if name in set(df["clusterer_name"])]
-    order.extend(sorted(set(df["clusterer_label"]) - set(order)))
-    return order
+    present = set(df["clusterer_label"])
+    return clusterer_label_order(present)
 
 
 def _plot_metric_table(
@@ -85,6 +86,28 @@ def _plot_metric_table(
     fig.supxlabel(metric_label)
     save_figure(fig, ROOT_DIR / "results" / "plots" / filename)
     plt.close(fig)
+
+
+def _write_metric_latex_table(
+    df: pd.DataFrame,
+    *,
+    metric: str,
+) -> None:
+    dataset_order = sorted(df["dataset_label"].unique())
+    clusterer_order = _clusterer_order(df)
+    table = df.pivot_table(
+        index="dataset_label",
+        columns="clusterer_label",
+        values=metric,
+        aggfunc="mean",
+    ).reindex(index=dataset_order, columns=clusterer_order)
+    table = table.fillna(0.0)
+    table.loc["Mean"] = table.mean(axis=0)
+
+    latex = style_top3_latex(table)
+    path = ROOT_DIR / "results" / "tables" / f"datasets_{metric}_mean.tex"
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(latex)
 
 
 def _write_metric_heatmap(
@@ -261,6 +284,10 @@ def main() -> None:
             df,
             metric=metric,
             statistic="mean",
+        )
+        _write_metric_latex_table(
+            df,
+            metric=metric,
         )
         _write_metric_heatmap(
             df,

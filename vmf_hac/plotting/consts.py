@@ -31,6 +31,40 @@ SQUARE_FIGURE_ASPECT = 1.0
 _DATASET_NAME_MAP: dict[str, str] | None = None
 
 DATASET_ORDER = ["DBPedia", "BuiltBenchP2P", "ClusTREC-Covid", "Wikicities"]
+
+# Canonical algorithm name → display label mapping.
+# Insertion order defines the preferred display order across all plots and tables.
+CLUSTERER_LABELS: dict[str, str] = {
+    "VmfHAC": "vMF-HAC",
+    "AgglomerativeClustering_ward": "Ward",
+    "AgglomerativeClustering_single": "Single",
+    "AgglomerativeClustering_complete": "Complete",
+    "AgglomerativeClustering_average": "Average",
+    "VonMisesFisherMixture_soft": "moVMF",
+    "SphericalKMeans": "Spherical KM",
+    "KMeans": "K-Means",
+    "SpectralClustering": "Spectral",
+}
+
+
+def clusterer_label_order(present: set[str]) -> list[str]:
+    """Return display labels in canonical order, filtered to those present in *present*.
+
+    *present* may contain either algorithm names (keys of CLUSTERER_LABELS) or
+    display labels (values).  Unknown entries are appended in sorted order.
+    """
+    known_labels = list(CLUSTERER_LABELS.values())
+    # Support callers that pass a set of display labels directly.
+    if present and next(iter(present)) in known_labels:
+        order = [label for label in known_labels if label in present]
+        order.extend(sorted(present - set(order)))
+    else:
+        order = [CLUSTERER_LABELS[name] for name in CLUSTERER_LABELS if name in present]
+        extra_labels = present - set(CLUSTERER_LABELS.keys())
+        order.extend(sorted(extra_labels - set(order)))
+    return order
+
+
 _DATASET_COLORS = sns.color_palette(PALETTE_NAME, n_colors=len(DATASET_ORDER))
 DATASET_PALETTE = dict(zip(DATASET_ORDER, _DATASET_COLORS, strict=False))
 

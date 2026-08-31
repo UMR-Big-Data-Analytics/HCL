@@ -9,40 +9,16 @@ from matplotlib import pyplot as plt
 
 from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.plotting.consts import (
+    CLUSTERER_LABELS,
     categorical_palette,
+    clusterer_label_order,
     dataset_display_name,
     figure_size,
     page_aspect_limit,
     save_figure,
     setup_publication_style,
 )
-
-CLUSTERER_LABELS = {
-    "AgglomerativeClustering_average": "Average",
-    "AgglomerativeClustering_complete": "Complete",
-    "AgglomerativeClustering_single": "Single",
-    "AgglomerativeClustering_ward": "Ward",
-    "KMeans": "K-Means",
-    "SpectralClustering": "Spectral",
-    "SphericalKMeans": "Spherical KM",
-    "VmfHAC": "vMF-HAC",
-    "VonMisesFisherMixture_soft": "moVMF",
-}
-
-
-def _latex_escape(value: str) -> str:
-    return (
-        value.replace("\\", "\\textbackslash{}")
-        .replace("&", "\\&")
-        .replace("%", "\\%")
-        .replace("$", "\\$")
-        .replace("#", "\\#")
-        .replace("_", "\\_")
-        .replace("{", "\\{")
-        .replace("}", "\\}")
-        .replace("~", "\\textasciitilde{}")
-        .replace("^", "\\textasciicircum{}")
-    )
+from vmf_hac.plotting.latex_table import style_top3_latex
 
 
 def _compute_v_measure_auc_table(df: pd.DataFrame) -> pd.DataFrame:
@@ -59,43 +35,11 @@ def _compute_v_measure_auc_table(df: pd.DataFrame) -> pd.DataFrame:
 
     auc_df = pd.DataFrame(auc_rows)
     table = auc_df.pivot(index="dataset_label", columns="clusterer_label", values="auc")
-    algorithm_columns = [label for label in CLUSTERER_LABELS.values() if label in set(table.columns)]
+    algorithm_columns = clusterer_label_order(set(table.columns))
     table = table.reindex(columns=algorithm_columns)
 
-    mean_algorithms = table[algorithm_columns].mean(axis=0)
-    mean_row = {column: mean_algorithms[column] for column in algorithm_columns}
-    table.loc["mean"] = pd.Series(mean_row)
+    table.loc["Mean"] = table[algorithm_columns].mean(axis=0)
     return table
-
-
-def _style_top3_latex(table: pd.DataFrame) -> str:
-    algorithm_columns = list(table.columns)
-
-    formatted = table.copy()
-    for col in formatted.columns:
-        formatted[col] = formatted[col].map(lambda x: f"{x:.3f}")
-
-    for idx in formatted.index:
-        row_values = table.loc[idx, algorithm_columns]
-        row_ranks = row_values.rank(ascending=False, method="min")
-        for col in algorithm_columns:
-            rank = row_ranks.loc[col]
-            value = formatted.loc[idx, col]
-            if rank == 1:
-                formatted.loc[idx, col] = f"\\textbf{{\\uline{{{value}}}}}"
-            elif rank == 2:
-                formatted.loc[idx, col] = f"\\textbf{{\\dashuline{{{value}}}}}"
-            elif rank == 3:
-                formatted.loc[idx, col] = f"\\textbf{{\\dotuline{{{value}}}}}"
-
-    escaped_columns = [_latex_escape(str(col)) for col in formatted.columns]
-    formatted.columns = escaped_columns
-    formatted.index = [_latex_escape(str(idx)) for idx in formatted.index]
-    if "mean" in formatted.index:
-        formatted.rename(index={"mean": r"\textbf{Mean}"}, inplace=True)
-    formatted.index.name = "Dataset"
-    latex = formatted.to_latex(escape=False, float_format=None)
-    return latex.replace("\n\\textbf{Mean} &", "\n\\midrule\n\\textbf{Mean} &", 1)
 
 
 def main():
@@ -128,8 +72,7 @@ def main():
         .reset_index()
     )
     df["clusterer_label"] = df["clusterer_name"].map(CLUSTERER_LABELS).fillna(df["clusterer_name"])
-    clusterer_order = [name for name in CLUSTERER_LABELS if name in set(df["clusterer_name"].unique())]
-    label_order = [CLUSTERER_LABELS[name] for name in clusterer_order]
+    label_order = clusterer_label_order(set(df["clusterer_label"]))
     clusterer_palette = categorical_palette(label_order)
 
     n_datasets = df["dataset_label"].unique().shape[0]
@@ -195,7 +138,7 @@ def main():
 
     os.makedirs(ROOT_DIR / "results" / "tables", exist_ok=True)
     auc_table = _compute_v_measure_auc_table(df)
-    auc_table_latex = _style_top3_latex(auc_table)
+    auc_table_latex = style_top3_latex(auc_table)
     with open(ROOT_DIR / "results" / "tables" / "dimensions_v_measure_auc.tex", "w", encoding="utf-8") as file:
         file.write(auc_table_latex)
 
