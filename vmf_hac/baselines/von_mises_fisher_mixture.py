@@ -799,6 +799,7 @@ def movMF(
 
 class VonMisesFisherMixture(BaseEstimator, ClusterMixin, TransformerMixin):
     """Estimator for Mixture of von Mises Fisher clustering on the unit sphere.
+    Source: https://github.com/jasonlaska/spherecluster
 
     Implements the algorithms (i) and (ii) from
 

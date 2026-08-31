@@ -208,6 +208,7 @@ def spherical_k_means(
 
 class SphericalKMeans(KMeans):
     """Spherical K-Means clustering
+    Source: https://github.com/jasonlaska/spherecluster
 
     Modfication of sklearn.cluster.KMeans where cluster centers are normalized
     (projected onto the sphere) in each iteration.
