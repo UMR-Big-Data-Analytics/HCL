@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -95,16 +96,22 @@ def _write_metric_latex_table(
 ) -> None:
     dataset_order = sorted(df["dataset_label"].unique())
     clusterer_order = _clusterer_order(df)
-    table = df.pivot_table(
-        index="dataset_label",
-        columns="clusterer_label",
-        values=metric,
-        aggfunc="mean",
-    ).reindex(index=dataset_order, columns=clusterer_order)
-    table = table.fillna(0.0)
-    table.loc["Mean"] = table.mean(axis=0)
+    pivot_kwargs: dict[str, Any] = {
+        "index": "dataset_label",
+        "columns": "clusterer_label",
+        "values": metric,
+    }
+    mean_table = (
+        df.pivot_table(**pivot_kwargs, aggfunc="mean").reindex(index=dataset_order, columns=clusterer_order).fillna(0.0)
+    )
+    std_table = (
+        df.pivot_table(**pivot_kwargs, aggfunc="std").reindex(index=dataset_order, columns=clusterer_order).fillna(0.0)
+    )
 
-    latex = style_top3_latex(table)
+    mean_table.loc["Mean"] = mean_table.mean(axis=0)
+    std_table.loc["Mean"] = std_table.mean(axis=0)
+
+    latex = style_top3_latex(mean_table, std_table=std_table)
     path = ROOT_DIR / "results" / "tables" / f"datasets_{metric}_mean.tex"
     with open(path, "w", encoding="utf-8") as f:
         f.write(latex)
