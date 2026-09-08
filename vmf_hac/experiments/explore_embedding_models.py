@@ -96,7 +96,7 @@ def embedding_models():
     config = get_config()
     all_results = []
     jobs = []
-    splits = 5
+    splits = 25
     for i, dataset_name in enumerate(config["datasets"]):
         for model_name in config["models"]:
             for split in range(splits):
