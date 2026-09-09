@@ -35,7 +35,7 @@ def run(
     dataset = DatasetManager(model_name).get(DatasetFactory.from_string(dataset_id), skip_cache=True)
     x, y = dataset.embeddings, dataset.labels
     if split is not None:
-        x, y = random_subset(x, y, n=1000, seed=split)
+        x, y = random_subset(x, y, n=min(1000, x.shape[0]), seed=split)
         gc.collect()
     if n_clusters is None:
         n_clusters = int(np.unique(y).shape[0])
