@@ -10,7 +10,7 @@ import pandas as pd
 from datasets import load_dataset
 from sklearn.datasets import fetch_20newsgroups
 
-from vmf_hac.functions.dataset import embed_texts, ensure_valid_embeddings, get_emb_dir
+from vmf_hac.functions.dataset import embed_texts, get_emb_dir
 
 
 @dataclass(frozen=True)
@@ -920,8 +920,7 @@ class TextDataset:
         emb_dir = get_emb_dir(self.name, self.encoding_model)
         if not os.path.exists(emb_dir):
             os.makedirs(emb_dir)
-        embeddings = ensure_valid_embeddings(self.embeddings, source=f"{self.name}/{self.encoding_model}")
-        np.save(os.path.join(emb_dir, "embeddings.npy"), embeddings)
+        np.save(os.path.join(emb_dir, "embeddings.npy"), self.embeddings)
         df = pd.DataFrame()
         df["text"] = self.texts
         df["label"] = self.labels

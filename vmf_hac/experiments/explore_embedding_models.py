@@ -1,4 +1,3 @@
-import gc
 import math
 import os
 from typing import Any
@@ -19,7 +18,6 @@ from vmf_hac.utils.data import random_subset
 from vmf_hac.utils.parallel import gather, task
 
 METHOD_FACTORIES = dict(METHODS)
-FLUSH_EVERY = 128
 
 
 @task
@@ -37,7 +35,7 @@ def run(
     x, y = dataset.embeddings, dataset.labels
     if split is not None:
         x, y = random_subset(x, y, n=min(1000, x.shape[0]), seed=split)
-        gc.collect()
+        x, y = x.copy(), y.copy()  # Full array is memmap'd; copy to keep only the subset in RAM for the worker process
     if n_clusters is None:
         n_clusters = int(np.unique(y).shape[0])
     clusterer: Clusterer = method_factory(n_clusters)
@@ -98,7 +96,7 @@ def embedding_models():
     all_results = []
     jobs = []
     splits = 25
-    for i, dataset_name in enumerate(config["datasets"]):
+    for _i, dataset_name in enumerate(config["datasets"]):
         for model_name in config["models"]:
             for split in range(splits):
                 for method_name, _ in METHODS:
@@ -111,15 +109,11 @@ def embedding_models():
                             split=split,
                         )
                     )
-                    if len(jobs) >= FLUSH_EVERY:
-                        results = gather(jobs, show_progress=True)
-                        all_results.extend(results)
-                        jobs = []
 
-        if i % 5 == 0:
-            results = gather(jobs, show_progress=True)
-            all_results.extend(results)
-            jobs = []
+        # if i % 5 == 0:
+        #     results = gather(jobs, show_progress=True)
+        #     all_results.extend(results)
+        #     jobs = []
 
     results = gather(jobs, show_progress=True)
     all_results.extend(results)

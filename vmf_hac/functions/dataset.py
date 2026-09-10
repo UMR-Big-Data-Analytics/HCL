@@ -13,8 +13,6 @@ from transformers import BitsAndBytesConfig
 
 from vmf_hac.definitions import DATA_DIR
 
-EMBEDDING_VALIDATION_CHUNK_BYTES = 64 * 1024**2
-
 
 def _get_device():
     if torch.cuda.is_available():
@@ -23,15 +21,6 @@ def _get_device():
         return "mps"
     else:
         return "cpu"
-
-
-def _get_embedding(emb_dir: str, model: str, texts: Sequence[str]) -> np.ndarray:
-    if os.path.exists(emb_dir):
-        x = ensure_valid_embeddings(np.load(emb_dir), source=emb_dir)
-    else:
-        x = embed_texts(model, texts)
-        np.save(emb_dir, x)
-    return x
 
 
 def _prepare_texts(model_name: str, texts: Sequence[str]) -> list[str]:
@@ -61,27 +50,6 @@ def _is_out_of_memory(exc: BaseException) -> bool:
         return True
     message = str(exc).lower()
     return any(marker in message for marker in ("out of memory", "invalid buffer size", "can't allocate"))
-
-
-def ensure_valid_embeddings(x: np.ndarray, source: str) -> np.ndarray:
-    # Do NOT upcast here - keep the original dtype (typically float32).
-    # Callers that require float64 (e.g. VmfHAC.fit) cast locally.
-    if x.ndim != 2:
-        raise ValueError(f"Embeddings from {source} must be a 2D array, got shape {x.shape}.")
-
-    bytes_per_row = max(1, x.shape[1] * x.dtype.itemsize)
-    rows_per_chunk = max(1, EMBEDDING_VALIDATION_CHUNK_BYTES // bytes_per_row)
-    n_bad_rows = 0
-    for start in range(0, x.shape[0], rows_per_chunk):
-        finite_rows = np.isfinite(x[start : start + rows_per_chunk]).all(axis=1)
-        n_bad_rows += int(np.count_nonzero(~finite_rows))
-
-    if n_bad_rows:
-        raise ValueError(
-            f"Embeddings from {source} contain NaN/Inf values ({n_bad_rows}/{x.shape[0]} rows affected). "
-            "This usually means the encoder ran in float16 and overflowed; regenerate the embeddings."
-        )
-    return x
 
 
 MAX_SEQ_LENGTH = 4096
@@ -180,7 +148,7 @@ def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
                     show_progress_bar=True,
                     convert_to_numpy=True,
                 )
-                return ensure_valid_embeddings(embeddings, source=f"model={encoding_model}")  # ty:ignore[invalid-argument-type]
+                return embeddings  # ty:ignore[invalid-return-type]
             except (torch.OutOfMemoryError, RuntimeError) as exc:
                 if not _is_out_of_memory(exc):
                     raise
