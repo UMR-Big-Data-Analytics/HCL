@@ -852,7 +852,7 @@ class TextDataset:
                 # the underlying physical pages (OS page cache), so N workers on the
                 # same dataset do not multiply RAM usage by N.
                 embeddings = np.load(os.path.join(emb_dir, "embeddings.npy"), mmap_mode="r")
-                self._embeddings = ensure_valid_embeddings(embeddings, source=f"cached embeddings in {emb_dir}")
+                self._embeddings = embeddings
             else:
                 raise ValueError(
                     f"Embeddings not found for dataset {self.name} with encoding model {self.encoding_model}. Please generate embeddings first."
@@ -1032,8 +1032,9 @@ class DatasetManager:
         custom_splits: list[str] | None = None,
         subset: str | None = None,
     ) -> TextDataset:
-        if dataset := DatasetManager._get_cached_dataset(dataset_name, model):
-            return dataset
+        cached_dataset = DatasetManager._get_cached_dataset(dataset_name, model)
+        if cached_dataset is not None:
+            return cached_dataset
         if subset is not None:
             dataset = load_dataset(dataset_name, subset)
         else:

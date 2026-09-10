@@ -19,6 +19,7 @@ from vmf_hac.utils.data import random_subset
 from vmf_hac.utils.parallel import gather, task
 
 METHOD_FACTORIES = dict(METHODS)
+FLUSH_EVERY = 128
 
 
 @task
@@ -110,6 +111,10 @@ def embedding_models():
                             split=split,
                         )
                     )
+                    if len(jobs) >= FLUSH_EVERY:
+                        results = gather(jobs, show_progress=True)
+                        all_results.extend(results)
+                        jobs = []
 
         if i % 5 == 0:
             results = gather(jobs, show_progress=True)
