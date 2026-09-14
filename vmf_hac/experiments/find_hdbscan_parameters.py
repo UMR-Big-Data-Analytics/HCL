@@ -2,11 +2,13 @@ import json
 
 import optuna
 import pandas as pd
-from definitions import ROOT_DIR
-from entity import DatasetFactory, DatasetManager, TextDatasets
 from sklearn.cluster import HDBSCAN
 from umap import UMAP
-from utils import evaluate, random_subset
+
+from vmf_hac.definitions import ROOT_DIR
+from vmf_hac.entity import DatasetFactory, DatasetManager, TextDatasets
+from vmf_hac.utils import evaluate, random_subset
+
 
 
 def find_hdbscan_params(dataset_manager: DatasetManager, dataset_id: TextDatasets):
