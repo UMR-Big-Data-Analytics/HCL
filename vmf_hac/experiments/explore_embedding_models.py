@@ -5,6 +5,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.pipeline import Pipeline
 
 from vmf_hac.baselines import VonMisesFisherMixture
 from vmf_hac.definitions import ROOT_DIR
@@ -26,6 +27,7 @@ def run(
     dataset_id: str,
     dataset_name: str,
     model_name: str,
+    min_cluster_size: int,
     *,
     split: int | None = None,
     n_clusters: int | None = None,
@@ -38,11 +40,16 @@ def run(
         x, y = x.copy(), y.copy()  # Full array is memmap'd; copy to keep only the subset in RAM for the worker process
     if n_clusters is None:
         n_clusters = int(np.unique(y).shape[0])
-    clusterer: Clusterer = method_factory(n_clusters)
+    if method_name == "HDBSCAN":
+        clusterer: Clusterer = method_factory(-1, min_cluster_size=min_cluster_size)
+    else:
+        clusterer: Clusterer = method_factory(n_clusters)
     if isinstance(clusterer, AgglomerativeClustering):
         clusterer_name = f"{clusterer.__class__.__name__}_{clusterer.linkage}"
     elif isinstance(clusterer, VonMisesFisherMixture):
         clusterer_name = f"{clusterer.__class__.__name__}_{clusterer.posterior_type}"
+    elif isinstance(clusterer, Pipeline):
+        clusterer_name = "_".join([name for name, _ in clusterer.steps])
     else:
         clusterer_name = clusterer.__class__.__name__
     result = evaluate(clusterer, dataset_name, x, y, clusterer_name)
@@ -53,6 +60,7 @@ def embedding_models_over_k():
     config = get_config()
     all_results = []
     jobs = []
+    hdbscan_params = pd.read_csv(ROOT_DIR / "results" / "data" / "hdbscan_params.csv")
 
     datasets = [
         (TextDatasets.DBPEDIA_14, "DBPedia"),
@@ -61,6 +69,9 @@ def embedding_models_over_k():
         (TextDatasets.WIKICITIES, "WikiCities"),
     ]
     for i, (dataset, dataset_name) in enumerate(datasets):
+        row = hdbscan_params[hdbscan_params["dataset"] == dataset_name].iloc[0]
+        min_cluster_size = int(row["min_cluster_size"])
+
         for model_name in config["models"]:
             # Load only labels in the main process (embeddings stay mmap'd on demand in workers).
             y = DatasetManager(model_name).get(dataset).labels
@@ -76,6 +87,7 @@ def embedding_models_over_k():
                             dataset_name=dataset_name,
                             model_name=model_name,
                             n_clusters=int(k),
+                            min_cluster_size=min_cluster_size,
                         )
                     )
 
@@ -96,10 +108,17 @@ def embedding_models():
     all_results = []
     jobs = []
     splits = 25
+    hdbscan_params = pd.read_csv(ROOT_DIR / "results" / "data" / "hdbscan_params.csv")
+
     for _i, dataset_name in enumerate(config["datasets"]):
+        row = hdbscan_params[hdbscan_params["dataset"] == dataset_name].iloc[0]
+        min_cluster_size = int(row["min_cluster_size"])
+
         for model_name in config["models"]:
             for split in range(splits):
                 for method_name, _ in METHODS:
+                    if method_name != "HDBSCAN":
+                        continue
                     jobs.append(
                         run(
                             method_name=method_name,
@@ -107,6 +126,7 @@ def embedding_models():
                             dataset_name=dataset_name,
                             model_name=model_name,
                             split=split,
+                            min_cluster_size=min_cluster_size,
                         )
                     )
 
@@ -119,7 +139,7 @@ def embedding_models():
     all_results.extend(results)
     df = pd.DataFrame(all_results)
     os.makedirs(ROOT_DIR / "results" / "data", exist_ok=True)
-    df.to_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models.csv", index=False)
+    df.to_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models_hdbscan.csv", index=False)
 
 
 if __name__ == "__main__":

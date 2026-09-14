@@ -35,7 +35,7 @@ DATASET_ORDER = ["DBPedia", "BuiltBenchP2P", "ClusTREC-Covid", "Wikicities"]
 # Canonical algorithm name → display label mapping.
 # Insertion order defines the preferred display order across all plots and tables.
 CLUSTERER_LABELS: dict[str, str] = {
-    "VmfHAC": "vMF-HAC",
+    "VmfHAC": "HCL",
     "AgglomerativeClustering_ward": "Ward",
     "AgglomerativeClustering_single": "Single",
     "AgglomerativeClustering_average": "Average",
@@ -44,7 +44,61 @@ CLUSTERER_LABELS: dict[str, str] = {
     "SphericalKMeans": "Spherical KM",
     "SpectralClustering": "Spectral",
     "VonMisesFisherMixture_soft": "moVMF",
+    "umap_hdbscan": "HDBSCAN",
 }
+
+# One distinct colour per clustering method, shared by the matplotlib figures and the
+# critdd diagrams so a method keeps its identity across every figure in the paper.
+CLUSTERER_COLORS: dict[str, str] = {
+    "HCL": "009E73",
+    "Ward": "D55E00",
+    "Single": "999999",
+    "Average": "E69F00",
+    "Complete": "56B4E9",
+    "K-Means": "0072B2",
+    "Spherical KM": "CC79A7",
+    "Spectral": "8C564B",
+    "moVMF": "7E2F8E",
+    "HDBSCAN": "FC0352",
+}
+
+# Marks are only used by the critdd diagrams, which draw discrete points rather than lines.
+CLUSTERER_TIKZ_MARKS: dict[str, str] = {
+    "HCL": "*",
+    "Ward": "square*",
+    "Single": "otimes*",
+    "Average": "triangle*",
+    "Complete": "diamond*",
+    "K-Means": "pentagon*",
+    "Spherical KM": "square*",
+    "Spectral": "*",
+    "moVMF": "asterisk",
+    "HDBSCAN": "oplus*",
+}
+
+
+def critdd_color_name(label: object) -> str:
+    """Return a LaTeX-safe colour name for *label* (TeX macros cannot contain punctuation)."""
+    return "cd" + "".join(character for character in str(label) if character.isalnum())
+
+
+def critdd_preamble(labels: Sequence[object]) -> str:
+    r"""Return ``\definecolor`` declarations for *labels* in the shared palette."""
+    return "\n".join(
+        f"\\definecolor{{{critdd_color_name(label)}}}{{HTML}}{{{CLUSTERER_COLORS[str(label)]}}}"
+        for label in labels
+        if str(label) in CLUSTERER_COLORS
+    )
+
+
+def critdd_cycle_list(labels: Sequence[object]) -> str:
+    """Return a pgfplots cycle list that matches the shared colours and marks."""
+    entries = []
+    for label in labels:
+        color = critdd_color_name(label)
+        mark = CLUSTERER_TIKZ_MARKS.get(str(label), "*")
+        entries.append(f"{{{color},mark={mark}}}")
+    return ",".join(entries)
 
 
 def clusterer_label_order(present: set[str]) -> list[str]:
@@ -75,9 +129,20 @@ def dataset_display_name(dataset_name: object) -> str:
     return DatasetFactory.get_dataset_name_map().get(name, name.rsplit("/", maxsplit=1)[-1])
 
 
-def categorical_palette(labels: Sequence[object]) -> dict[object, tuple[float, float, float]]:
-    colors = sns.color_palette(PALETTE_NAME, n_colors=len(labels))
-    return dict(zip(labels, colors, strict=False))
+def categorical_palette(labels: Sequence[object]) -> dict[object, tuple[float, float, float] | str]:
+    palette: dict[object, tuple[float, float, float] | str] = {}
+    fallback_labels: list[object] = []
+    for label in labels:
+        if str(label) in CLUSTERER_COLORS:
+            palette[label] = "#" + CLUSTERER_COLORS[str(label)]
+        else:
+            fallback_labels.append(label)
+
+    if fallback_labels:
+        colors = sns.color_palette(PALETTE_NAME, n_colors=len(fallback_labels))
+        palette.update(dict(zip(fallback_labels, colors, strict=False)))
+
+    return palette
 
 
 def figure_width_pt(columns: int = 1) -> float:

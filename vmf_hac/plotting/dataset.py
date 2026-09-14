@@ -13,6 +13,8 @@ from vmf_hac.plotting.consts import (
     CLUSTERER_LABELS,
     categorical_palette,
     clusterer_label_order,
+    critdd_cycle_list,
+    critdd_preamble,
     dataset_display_name,
     figure_size,
     page_aspect_limit,
@@ -21,10 +23,6 @@ from vmf_hac.plotting.consts import (
 )
 from vmf_hac.plotting.latex_table import style_top3_latex
 
-METRICS = {
-    "v_measure": ("V-Measure", "datasets_v_measure.pdf"),
-    "ari": ("ARI", "datasets_ari.pdf"),
-}
 LANDSCAPE_ASPECT = 1 / np.sqrt(2)
 
 
@@ -111,10 +109,15 @@ def _write_metric_latex_table(
     mean_table.loc["Mean"] = mean_table.mean(axis=0)
     std_table.loc["Mean"] = std_table.mean(axis=0)
 
-    latex = style_top3_latex(mean_table, std_table=std_table)
+    latex = style_top3_latex(mean_table, std_table=std_table, std_mode="none")
     path = ROOT_DIR / "results" / "tables" / f"datasets_{metric}_mean.tex"
     with open(path, "w", encoding="utf-8") as f:
         f.write(latex)
+
+    appendix_latex = style_top3_latex(mean_table, std_table=std_table, std_mode="inline")
+    appendix_path = ROOT_DIR / "results" / "tables" / f"datasets_{metric}_mean_std.tex"
+    with open(appendix_path, "w", encoding="utf-8") as f:
+        f.write(appendix_latex)
 
 
 def _write_metric_heatmap(
@@ -240,26 +243,9 @@ def _write_2d_critical_difference_diagram(
     options = {
         "alpha": 0.05,
         "adjustment": "holm",
-        "preamble": "\n".join(
-            [
-                r"\definecolor{wardMarker}{HTML}{D55E00}",
-                r"\definecolor{vmfMarker}{HTML}{009E73}",
-            ]
-        ),
+        "preamble": critdd_preamble(clusterer_order),
         "axis_options": {
-            "cycle list": ",".join(
-                [
-                    "{blue,mark=*}",
-                    "{red,mark=square*}",
-                    "{brown,mark=otimes*}",
-                    "{wardMarker,mark=triangle*,mark size=3.2pt}",
-                    "{blue,mark=diamond*}",
-                    "{red,mark=*}",
-                    "{brown,mark=square*}",
-                    "{vmfMarker,mark=pentagon*,mark size=3.2pt}",
-                    "{blue,mark=asterisk}",
-                ]
-            ),
+            "cycle list": critdd_cycle_list(clusterer_order),
             "width": r"\axisdefaultwidth",
             "height": r"2.2*\axisdefaultheight",
             "legend style": "draw=none,fill=none,at={(0.25, -0.05)},anchor=north,row sep=0.4cm,/tikz/every even column/.append style={column sep=0.5cm}",
@@ -279,38 +265,38 @@ def main() -> None:
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_datasets.csv")
     df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
     df["clusterer_label"] = df["clusterer_name"].map(CLUSTERER_LABELS).fillna(df["clusterer_name"])
+    df["v_measure_effective"] = df["v_measure"] * (1.0 - df["noise_fraction"])
 
-    for metric, (metric_label, filename) in METRICS.items():
-        _plot_metric_table(
-            df,
-            metric=metric,
-            metric_label=metric_label,
-            filename=filename,
-        )
-        _write_metric_heatmap(
-            df,
-            metric=metric,
-            statistic="mean",
-        )
-        _write_metric_latex_table(
-            df,
-            metric=metric,
-        )
-        _write_metric_heatmap(
-            df,
-            metric=metric,
-            statistic="std",
-        )
-        _write_critical_difference_diagram(
-            df,
-            metric=metric,
-            metric_label=metric_label,
-        )
-        _write_2d_critical_difference_diagram(
-            df,
-            metric=metric,
-            metric_label=metric_label,
-        )
+    _plot_metric_table(
+        df,
+        metric="v_measure_effective",
+        metric_label="V-Measure",
+        filename="datasets_v_measure.pdf",
+    )
+    _write_metric_heatmap(
+        df,
+        metric="v_measure_effective",
+        statistic="mean",
+    )
+    _write_metric_latex_table(
+        df,
+        metric="v_measure_effective",
+    )
+    _write_metric_heatmap(
+        df,
+        metric="v_measure_effective",
+        statistic="std",
+    )
+    _write_critical_difference_diagram(
+        df,
+        metric="v_measure_effective",
+        metric_label="V-Measure",
+    )
+    _write_2d_critical_difference_diagram(
+        df,
+        metric="v_measure_effective",
+        metric_label="V-Measure",
+    )
 
 
 if __name__ == "__main__":

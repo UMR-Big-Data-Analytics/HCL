@@ -33,7 +33,7 @@ def evaluate(
     dim = x.shape[1]
     running_time_s = end - start
 
-    noise_mask = y == -1
+    noise_mask = y_pred == -1
     labels_pred_non_noise = y_pred[~noise_mask]
     labels_true_non_noise = y[~noise_mask]
 
@@ -69,7 +69,7 @@ def evaluate(
         calinski_harabasz = calinski_harabasz_score(embeddings_non_noise, labels_pred_non_noise)
         davies_bouldin = davies_bouldin_score(embeddings_non_noise, labels_pred_non_noise)
 
-    noise_fraction = float(noise_mask.sum()) / y_pred.shape[0]
+    noise_fraction = noise_mask.sum() / y_pred.shape[0]
     n_clusters = n_pred_clusters
     n_true_clusters = np.unique(y).shape[0]
 
