@@ -10,11 +10,14 @@ from vmf_hac.entity import DatasetFactory, DatasetManager, TextDatasets
 from vmf_hac.utils import evaluate, random_subset
 
 
-
 def find_hdbscan_params(dataset_manager: DatasetManager, dataset_id: TextDatasets):
     dataset = dataset_manager.get(dataset_id)
     x, y = random_subset(dataset.embeddings, dataset.labels, min(1000, dataset.labels.shape[0]), seed=2)
-    umap = UMAP(n_components=15, metric="cosine", random_state=42)
+    umap = UMAP(n_neighbors=15,
+                    n_components=5,
+                    min_dist=0.0,
+                    metric="cosine",
+                random_state=42)
     x_red = umap.fit_transform(x)
 
     def search(trial):

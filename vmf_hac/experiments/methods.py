@@ -67,7 +67,10 @@ METHODS = [
         "HDBSCAN",
         lambda n_clusters, **kwargs: Pipeline(
             [
-                ("umap", UMAP(n_components=15, metric="cosine", random_state=42, n_jobs=1)),
+                ("umap", UMAP(n_neighbors=15,
+                    n_components=5,
+                    min_dist=0.0,
+                    metric="cosine", random_state=42, n_jobs=1)),
                 ("hdbscan", HDBSCAN(metric="euclidean", copy=True, **kwargs)),
             ]
         ),
