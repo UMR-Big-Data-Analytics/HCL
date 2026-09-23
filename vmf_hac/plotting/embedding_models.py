@@ -11,7 +11,6 @@ from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.plotting.consts import (
     CLUSTERER_LABELS,
     DATASET_ORDER,
-    PUBLICATION_FONT_SIZE_PT,
     categorical_palette,
     clusterer_label_order,
     critdd_cycle_list,
@@ -211,9 +210,9 @@ def _plot_level_and_order(df: pd.DataFrame) -> None:
         ax.grid(True, axis="y", alpha=0.3)
 
     left.set_ylabel("Mean V-Measure")
-    left.set_title("(a) Absolute Quality", fontsize=PUBLICATION_FONT_SIZE_PT)
+    # left.set_title("(a) Absolute Quality", fontsize=PUBLICATION_FONT_SIZE_PT)
     right.set_ylabel("Mean Rank")
-    right.set_title("(b) Relative Ranking", fontsize=PUBLICATION_FONT_SIZE_PT)
+    # right.set_title("(b) Relative Ranking", fontsize=PUBLICATION_FONT_SIZE_PT)
     right.set_yticks(np.arange(1, len(clusterer_order) + 1))
     right.invert_yaxis()
 
@@ -246,6 +245,7 @@ def _write_level_table(df: pd.DataFrame) -> None:
         index_name="Method",
         std_mode="none",
     )
+
     path = ROOT_DIR / "results" / "tables" / "embedding_models_v_measure_effective_mean.tex"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(latex, encoding="utf-8")
@@ -258,6 +258,7 @@ def _write_level_table(df: pd.DataFrame) -> None:
         index_name="Method",
         std_mode="inline",
     )
+
     appendix_path = ROOT_DIR / "results" / "tables" / "embedding_models_v_measure_mean_std.tex"
     appendix_path.write_text(appendix_latex, encoding="utf-8")
 

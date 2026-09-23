@@ -11,6 +11,10 @@ class ExperimentResult(BaseModel):
     ari: float
     ami: float
     v_measure: float
+    v_measure_singleton: float
+    v_measure_nearest: float
+    ami_nearest: float
+    ari_nearest: float
     noise_fraction: float
     homogeneity: float
     completeness: float

@@ -1,13 +1,17 @@
 import os
 
+import numpy as np
 import pandas as pd
 import scienceplots  # noqa
 import seaborn as sns
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.ticker import LogLocator, NullFormatter
+from scipy.cluster.hierarchy import dendrogram
 
+from vmf_hac.core import VmfHAC
 from vmf_hac.definitions import ROOT_DIR
+from vmf_hac.entity import DatasetManager, TextDatasets
 from vmf_hac.plotting.consts import (
     DATASET_ORDER,
     categorical_palette,
@@ -20,8 +24,53 @@ from vmf_hac.plotting.consts import (
 K_MAX = 2500
 
 
+def linkage_trees():
+    dataset_manager = DatasetManager("intfloat/multilingual-e5-large")
+    dataset = dataset_manager.get(TextDatasets.DBPEDIA_14)
+    k = np.unique(dataset.labels).shape[0]
+    vmf_small = VmfHAC(n_clusters=k, gamma=0.01)
+    vmf_large = VmfHAC(n_clusters=k, gamma=0.05)
+    vmf_small.fit(dataset.embeddings)
+    vmf_large.fit(dataset.embeddings)
+
+    linkage_small = vmf_small.linkage_matrix_
+    linkage_large = vmf_large.linkage_matrix_
+
+    # plot the linkage tree
+    _fig, axes = plt.subplots(1, 2, figsize=figure_size(columns=1))
+    for ax, gamma, linkage in zip(
+        axes,
+        [0.01, 0.05],
+        [linkage_small, linkage_large],
+        strict=False,
+    ):
+        assert linkage is not None
+        dendrogram(
+            linkage,
+            ax=ax,
+            orientation="right",
+            no_labels=True,
+            color_threshold=np.inf,
+            link_color_func=lambda _: "black",
+            show_leaf_counts=False,
+        )
+        for collection in ax.collections:
+            collection.set_linewidth(0.2)
+        ax.text(
+            0.98,
+            0.98,
+            rf"$\gamma = {gamma}$",
+            transform=ax.transAxes,
+            ha="right",
+            va="top",
+            fontsize=10,
+        )
+        ax.set_xticklabels([])
+    plt.tight_layout()
+    plt.savefig(ROOT_DIR / "results" / "plots" / "linkage_tree_dbpedia.pdf")
+
+
 def main():
-    setup_publication_style()
     os.makedirs(ROOT_DIR / "results" / "plots", exist_ok=True)
 
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_gamma_linkage_behavior.csv")
@@ -90,4 +139,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    setup_publication_style()
+    linkage_trees()
+    # main()

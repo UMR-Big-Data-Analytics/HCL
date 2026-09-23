@@ -3,6 +3,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from functions import normalize
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.pipeline import Pipeline
 
@@ -40,6 +41,10 @@ def main():
     n_splits = 25
     reduction_factors = np.linspace(0.1, 1.0, 100).tolist()
     hdbscan_params = pd.read_csv(ROOT_DIR / "results" / "data" / "hdbscan_params.csv")
+    first = True
+
+    n_jobs = len(config["datasets"]) * n_splits * len(reduction_factors) * len(METHODS)
+    completed_jobs = 0
 
     for dataset_name in config["datasets"]:
         dataset = DatasetManager(model_name).get(DatasetFactory.from_string(dataset_name))
@@ -47,22 +52,36 @@ def main():
         min_cluster_size = int(row["min_cluster_size"])
 
         for split in range(n_splits):
-            x, y = prepare_data(dataset.embeddings, dataset.labels, n=1000, seed=split)
+            x, y = prepare_data(dataset.embeddings, dataset.labels, n=min(1000, dataset.labels.shape[0]), seed=split)
             for reduction_factor in reduction_factors:
                 x_red = x[:, : int(x.shape[1] * reduction_factor)]
+                x_red = normalize(x_red)
                 k = np.unique(y).shape[0]
                 for method_name, method_factory in METHODS:
                     if method_name == "HDBSCAN":
                         method = method_factory(-1, min_cluster_size=min_cluster_size)
                     else:
-                        continue
                         method = method_factory(k)
                     jobs.append(run(method, x_red, y, dataset_name, split, reduction_factor))
+                    if len(jobs) == 1000:
+                        res = gather(jobs, show_progress=True)
+                        write_intermediate_results(res, first)
+                        completed_jobs += 1000
+                        print(f"Completed {completed_jobs}/{n_jobs} jobs")
+                        first = False
+                        jobs = []
 
-    results = gather(jobs, show_progress=True)
+    res = gather(jobs, show_progress=True)
+    write_intermediate_results(res, first)
+
+
+def write_intermediate_results(results: list[dict], first: bool):
     df = pd.DataFrame(results)
     os.makedirs(ROOT_DIR / "results" / "data", exist_ok=True)
-    df.to_csv(ROOT_DIR / "results" / "data" / "explore_dimensions_hdbscan.csv", index=False)
+    if first:
+        df.to_csv(ROOT_DIR / "results" / "data" / "explore_dimensions.csv", index=False)
+    else:
+        df.to_csv(ROOT_DIR / "results" / "data" / "explore_dimensions.csv", index=False, mode="a", header=False)
 
 
 if __name__ == "__main__":

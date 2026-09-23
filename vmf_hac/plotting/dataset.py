@@ -109,12 +109,22 @@ def _write_metric_latex_table(
     mean_table.loc["Mean"] = mean_table.mean(axis=0)
     std_table.loc["Mean"] = std_table.mean(axis=0)
 
-    latex = style_top3_latex(mean_table, std_table=std_table, std_mode="none")
+    latex = style_top3_latex(
+        mean_table,
+        std_table=std_table,
+        std_mode="none",
+    )
+
     path = ROOT_DIR / "results" / "tables" / f"datasets_{metric}_mean.tex"
     with open(path, "w", encoding="utf-8") as f:
         f.write(latex)
 
-    appendix_latex = style_top3_latex(mean_table, std_table=std_table, std_mode="inline")
+    appendix_latex = style_top3_latex(
+        mean_table,
+        std_table=std_table,
+        std_mode="inline",
+    )
+
     appendix_path = ROOT_DIR / "results" / "tables" / f"datasets_{metric}_mean_std.tex"
     with open(appendix_path, "w", encoding="utf-8") as f:
         f.write(appendix_latex)

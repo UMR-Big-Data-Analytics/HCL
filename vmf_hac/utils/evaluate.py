@@ -19,6 +19,35 @@ from vmf_hac.entity.clusterer import Clusterer
 from vmf_hac.entity.experiment_result import ExperimentResult
 
 
+def _labels_noise_as_singletons(y_pred: np.ndarray) -> np.ndarray:
+    """Give every noise point its own cluster, so noise is scored rather than discarded."""
+    labels = y_pred.copy()
+    noise_idx = np.flatnonzero(labels == -1)
+    if noise_idx.size:
+        labels[noise_idx] = labels.max() + 1 + np.arange(noise_idx.size)
+    return labels
+
+
+def _labels_noise_to_nearest(x: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
+    """Assign every noise point to the cosine-nearest non-noise cluster centroid."""
+    noise_mask = y_pred == -1
+    if not noise_mask.any():
+        return y_pred.copy()
+    if noise_mask.all():
+        return _labels_noise_as_singletons(y_pred)
+
+    cluster_ids = np.unique(y_pred[~noise_mask])
+    centroids = np.stack([x[y_pred == cluster_id].mean(axis=0) for cluster_id in cluster_ids])
+
+    def _unit(a: np.ndarray) -> np.ndarray:
+        return a / (np.linalg.norm(a, axis=1, keepdims=True) + 1e-12)
+
+    similarity = _unit(x[noise_mask]) @ _unit(centroids).T
+    labels = y_pred.copy()
+    labels[noise_mask] = cluster_ids[similarity.argmax(axis=1)]
+    return labels
+
+
 def evaluate(
     clusterer: Clusterer,
     dataset_name: str,
@@ -46,6 +75,18 @@ def evaluate(
     completeness = completeness_score(labels_true_non_noise, labels_pred_non_noise)
     v_measure = v_measure_score(labels_true_non_noise, labels_pred_non_noise)
     fowlkes_mallows = fowlkes_mallows_score(labels_true_non_noise, labels_pred_non_noise)
+
+    # Noise-inclusive variants: v_measure above only scores the points the clusterer chose to
+    # label, which flatters methods that abstain. These score all n samples instead.
+    # v_measure_singleton is an optimistic bound only - singletons are perfectly homogeneous, so
+    # V-measure actually *rewards* abstention. Use v_measure_nearest for fair comparison.
+    labels_nearest = _labels_noise_to_nearest(x, y_pred)
+    v_measure_singleton = v_measure_score(y, _labels_noise_as_singletons(y_pred))
+    v_measure_nearest = v_measure_score(y, labels_nearest)
+    # V-measure is not corrected for chance and rewards over-clustering, so a method free to pick
+    # its own cluster count can inflate it. ami/ari_nearest are chance-corrected and do not.
+    ami_nearest = adjusted_mutual_info_score(y, labels_nearest)
+    ari_nearest = adjusted_rand_score(y, labels_nearest)
 
     n_non_noise_samples = labels_pred_non_noise.shape[0]
     n_pred_clusters = np.unique(labels_pred_non_noise).shape[0]
@@ -80,6 +121,10 @@ def evaluate(
         nmi=nmi,
         ari=ari,
         v_measure=v_measure,
+        v_measure_singleton=v_measure_singleton,
+        v_measure_nearest=v_measure_nearest,
+        ami_nearest=ami_nearest,
+        ari_nearest=ari_nearest,
         noise_fraction=noise_fraction,
         homogeneity=homogeneity,
         completeness=completeness,

@@ -44,7 +44,7 @@ CLUSTERER_LABELS: dict[str, str] = {
     "SphericalKMeans": "Spherical KM",
     "SpectralClustering": "Spectral",
     "VonMisesFisherMixture_soft": "moVMF",
-    "umap_hdbscan": "HDBSCAN",
+    "umap_hdbscan": "HDBSCAN$^+$",
 }
 
 # One distinct colour per clustering method, shared by the matplotlib figures and the
@@ -59,7 +59,7 @@ CLUSTERER_COLORS: dict[str, str] = {
     "Spherical KM": "CC79A7",
     "Spectral": "8C564B",
     "moVMF": "7E2F8E",
-    "HDBSCAN": "FC0352",
+    "HDBSCAN$^+$": "FC0352",
 }
 
 # Marks are only used by the critdd diagrams, which draw discrete points rather than lines.
@@ -73,8 +73,10 @@ CLUSTERER_TIKZ_MARKS: dict[str, str] = {
     "Spherical KM": "square*",
     "Spectral": "*",
     "moVMF": "asterisk",
-    "HDBSCAN": "oplus*",
+    "HDBSCAN$^+$": "oplus*",
 }
+
+HDBSCAN_LABEL = "HDBSCAN$^+$"
 
 
 def critdd_color_name(label: object) -> str:

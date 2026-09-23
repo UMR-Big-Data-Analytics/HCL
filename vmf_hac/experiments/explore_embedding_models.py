@@ -117,8 +117,6 @@ def embedding_models():
         for model_name in config["models"]:
             for split in range(splits):
                 for method_name, _ in METHODS:
-                    if method_name != "HDBSCAN":
-                        continue
                     jobs.append(
                         run(
                             method_name=method_name,
@@ -139,7 +137,7 @@ def embedding_models():
     all_results.extend(results)
     df = pd.DataFrame(all_results)
     os.makedirs(ROOT_DIR / "results" / "data", exist_ok=True)
-    df.to_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models_hdbscan.csv", index=False)
+    df.to_csv(ROOT_DIR / "results" / "data" / "explore_embedding_models.csv", index=False)
 
 
 if __name__ == "__main__":

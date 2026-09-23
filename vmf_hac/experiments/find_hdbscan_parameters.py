@@ -12,14 +12,15 @@ from vmf_hac.utils import evaluate, random_subset
 
 def find_hdbscan_params(dataset_manager: DatasetManager, dataset_id: TextDatasets):
     dataset = dataset_manager.get(dataset_id)
-    x, y = random_subset(dataset.embeddings, dataset.labels, min(1000, dataset.labels.shape[0]), seed=2)
+    # Held-out seed: splits 0-4 are used for evaluation, so tuning must not reuse one of them.
+    x, y = random_subset(dataset.embeddings, dataset.labels, min(1000, dataset.labels.shape[0]), seed=1000)
     umap = UMAP(n_neighbors=15, n_components=5, min_dist=0.0, metric="cosine", random_state=42)
     x_red = umap.fit_transform(x)
 
     def search(trial):
         min_cluster_size = trial.suggest_int("min_cluster_size", 2, 100)
         hdbscan = HDBSCAN(min_cluster_size=min_cluster_size)
-        res = evaluate(hdbscan, "clustrec_covid", x_red, y)
+        res = evaluate(hdbscan, str(dataset_id), x_red, y)
         cluster_diff = res.n_clusters - res.n_true_clusters
         if cluster_diff < 0:
             cluster_diff = cluster_diff * -1

@@ -52,14 +52,13 @@ def main():
                 if method_name == "HDBSCAN":
                     method = method_factory(-1, min_cluster_size=min_cluster_size)
                 else:
-                    continue
                     method = method_factory(k)
                 jobs.append(run(method, x, y, dataset_name, split))
 
     results = gather(jobs, show_progress=True)
     hdbscan_params = pd.DataFrame(results)
     os.makedirs(ROOT_DIR / "results" / "data", exist_ok=True)
-    hdbscan_params.to_csv(ROOT_DIR / "results" / "data" / "explore_datasets_hdbscan.csv", index=False)
+    hdbscan_params.to_csv(ROOT_DIR / "results" / "data" / "explore_datasets.csv", index=False)
 
 
 if __name__ == "__main__":

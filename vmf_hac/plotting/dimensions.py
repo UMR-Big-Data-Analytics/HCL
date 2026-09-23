@@ -21,15 +21,15 @@ from vmf_hac.plotting.consts import (
 from vmf_hac.plotting.latex_table import style_top3_latex
 
 
-def _compute_v_measure_auc_table(df: pd.DataFrame) -> pd.DataFrame:
+def _compute_v_measure_auc_table(df: pd.DataFrame, metric: str = "v_measure_effective") -> pd.DataFrame:
     auc_rows: list[dict[str, object]] = []
     for (clusterer_label, dataset_label), frame in df.groupby(["clusterer_label", "dataset_label"]):
-        curve = frame.groupby("reduction_factor")["v_measure"].mean().reset_index().sort_values("reduction_factor")
+        curve = frame.groupby("reduction_factor")[metric].mean().reset_index().sort_values("reduction_factor")
         auc_rows.append(
             {
                 "clusterer_label": clusterer_label,
                 "dataset_label": dataset_label,
-                "auc": float(np.trapezoid(curve["v_measure"].to_numpy(), curve["reduction_factor"].to_numpy())),
+                "auc": float(np.trapezoid(curve[metric].to_numpy(), curve["reduction_factor"].to_numpy())),
             }
         )
 
@@ -47,6 +47,11 @@ def main():
     os.makedirs(ROOT_DIR / "results" / "plots", exist_ok=True)
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_dimensions.csv")
     df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
+    df["v_measure_effective"] = df["v_measure"] * (1 - df["noise_fraction"])
+    # Noise-inclusive metrics reassign noise to the closest cluster instead of discarding it.
+    # ami_nearest is the headline metric: unlike V-measure it is corrected for chance, so a
+    # clusterer that picks its own cluster count cannot inflate it by over-segmenting.
+    # Older result files predate these columns, so degrade gracefully.
     df = (
         df[
             [
@@ -54,9 +59,13 @@ def main():
                 "dataset_label",
                 "dim",
                 "ari",
+                "ari_nearest",
                 "v_measure",
+                "v_measure_effective",
+                "v_measure_nearest",
                 "nmi",
                 "ami",
+                "ami_nearest",
                 "noise_fraction",
                 "homogeneity",
                 "completeness",
@@ -93,7 +102,7 @@ def main():
         sns.lineplot(
             data=frame,
             x="reduction_factor",
-            y="v_measure",
+            y="ami_nearest",
             hue="clusterer_label",
             hue_order=label_order,
             palette=clusterer_palette,
@@ -123,7 +132,7 @@ def main():
         ax.set_xlabel("$\\alpha$")
         ax.xaxis.label.set_visible(True)
 
-    fig.supylabel("V-Measure")
+    fig.supylabel("AMI (noise reassigned)")
 
     if legend_handles and legend_labels:
         fig.legend(
@@ -137,10 +146,15 @@ def main():
     save_figure(fig, ROOT_DIR / "results" / "plots" / "dimensions.pdf")
 
     os.makedirs(ROOT_DIR / "results" / "tables", exist_ok=True)
-    auc_table = _compute_v_measure_auc_table(df)
-    auc_table_latex = style_top3_latex(auc_table)
-    with open(ROOT_DIR / "results" / "tables" / "dimensions_v_measure_auc.tex", "w", encoding="utf-8") as file:
-        file.write(auc_table_latex)
+    for metric, filename in [
+        ("ami_nearest", "dimensions_ami_auc.tex"),
+        ("ari_nearest", "dimensions_ari_auc.tex"),
+        ("v_measure_nearest", "dimensions_v_measure_auc.tex"),
+        ("v_measure_effective", "dimensions_v_measure_effective_auc.tex"),
+    ]:
+        auc_table_latex = style_top3_latex(_compute_v_measure_auc_table(df, metric=metric))
+        with open(ROOT_DIR / "results" / "tables" / filename, "w", encoding="utf-8") as file:
+            file.write(auc_table_latex)
 
 
 if __name__ == "__main__":

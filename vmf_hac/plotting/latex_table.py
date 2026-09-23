@@ -14,8 +14,12 @@ def latex_escape(value: str) -> str:
         .replace("{", "\\{")
         .replace("}", "\\}")
         .replace("~", "\\textasciitilde{}")
-        .replace("^", "\\textasciicircum{}")
     )
+
+
+def _render_label(value: str) -> str:
+    """Escape *value* unless it already carries inline math, which must reach LaTeX verbatim."""
+    return value if "$" in value else latex_escape(value)
 
 
 def style_top3_latex(
@@ -26,6 +30,12 @@ def style_top3_latex(
     rank_within: Literal["row", "column"] = "row",
     index_name: str = "Dataset",
     std_mode: Literal["inline", "none"] = "inline",
+    emphasized_columns: dict[str, str] | None = None,
+    excluded_rank_columns: set[str] | None = None,
+    emphasized_column_cells: dict[str, str] | None = None,
+    emphasized_rows: dict[str, str] | None = None,
+    excluded_rank_rows: set[str] | None = None,
+    emphasized_row_cells: dict[str, str] | None = None,
 ) -> str:
     """Render *table* as a LaTeX booktabs table with the top-3 values highlighted.
 
@@ -49,6 +59,12 @@ def style_top3_latex(
         raise ValueError(msg)
 
     algorithm_columns = list(table.columns)
+    emphasized_columns = emphasized_columns or {}
+    excluded_rank_columns = excluded_rank_columns or set()
+    emphasized_column_cells = emphasized_column_cells or {}
+    emphasized_rows = emphasized_rows or {}
+    excluded_rank_rows = excluded_rank_rows or set()
+    emphasized_row_cells = emphasized_row_cells or {}
 
     formatted = table.copy().astype(object)
     for col in algorithm_columns:
@@ -59,22 +75,31 @@ def style_top3_latex(
                 formatted.loc[idx, col] = f"{mean_val:.3f} $\\pm$ {std_val:.3f}"
             else:
                 formatted.loc[idx, col] = f"{mean_val:.3f}"
+            cell_template = emphasized_column_cells.get(str(col)) or emphasized_row_cells.get(str(idx))
+            if cell_template is not None:
+                formatted.loc[idx, col] = cell_template.format(value=formatted.loc[idx, col])
 
     if rank_within == "row":
-        ranks = table[algorithm_columns].rank(axis=1, ascending=False, method="min")
+        ranked_columns = [col for col in algorithm_columns if col not in excluded_rank_columns]
+        basis = table.drop(index=list(excluded_rank_rows & set(table.index)))
+        ranks = basis[ranked_columns].rank(axis=1, ascending=False, method="min")
     else:
-        basis = table.drop(index=mean_index) if mean_index in table.index else table
-        ranks = basis[algorithm_columns].rank(axis=0, ascending=False, method="min")
+        dropped = set(excluded_rank_rows)
+        if mean_index in table.index:
+            dropped.add(mean_index)
+        basis = table.drop(index=list(dropped & set(table.index)))
+        ranked_columns = [col for col in algorithm_columns if col not in excluded_rank_columns]
+        ranks = basis[ranked_columns].rank(axis=0, ascending=False, method="min")
 
     underlines = {1: "uline", 2: "dashuline", 3: "dotuline"}
     for idx in ranks.index:
-        for col in algorithm_columns:
+        for col in ranked_columns:
             command = underlines.get(int(ranks.loc[idx, col]))
             if command is not None:
                 formatted.loc[idx, col] = f"\\textbf{{\\{command}{{{formatted.loc[idx, col]}}}}}"
 
-    formatted.columns = [latex_escape(str(col)) for col in formatted.columns]
-    formatted.index = [latex_escape(str(idx)) for idx in formatted.index]
+    formatted.columns = [emphasized_columns.get(str(col), _render_label(str(col))) for col in formatted.columns]
+    formatted.index = [emphasized_rows.get(str(idx), _render_label(str(idx))) for idx in formatted.index]
 
     if mean_index is not None:
         escaped_mean = latex_escape(mean_index)
