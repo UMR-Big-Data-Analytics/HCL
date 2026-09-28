@@ -5,7 +5,7 @@ EXPERIMENT_MODULES = [
     "hlc.experiments.explore_dimensions",
     "hlc.experiments.explore_embedding_models",
     "hlc.experiments.explore_gamma",
-    "hlc.experiments.explore_vmf_ward",
+    "hlc.experiments.explore_hcl_ward",
     "hlc.experiments.explore_gamma_linkage_behavior",
 ]
 

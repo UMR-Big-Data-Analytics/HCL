@@ -23,14 +23,14 @@ def run(
     results = []
     for n_clusters in range(1, x.shape[0]):
         model.n_clusters = n_clusters
-        vmf_labels = model.predict(x)
+        hcl_labels = model.predict(x)
 
-        vmf_cluster_sizes = np.unique_counts(vmf_labels).counts
-        vmf_skew = skew(vmf_cluster_sizes)
+        hcl_cluster_sizes = np.unique_counts(hcl_labels).counts
+        hcl_skew = skew(hcl_cluster_sizes)
         results.append(
             {
                 "gamma": gamma,
-                "vmf_cluster_skew": vmf_skew,
+                "hcl_cluster_skew": hcl_skew,
                 "dataset_name": dataset_name,
                 "split": split,
             }
@@ -65,7 +65,7 @@ def main():
         all_results.extend(result)
     df = pd.DataFrame(all_results)
     os.makedirs(ROOT_DIR / "results" / "data", exist_ok=True)
-    df.to_csv(ROOT_DIR / "results" / "data" / "explore_vmf_skewness.csv", index=False)
+    df.to_csv(ROOT_DIR / "results" / "data" / "explore_hcl_skewness.csv", index=False)
 
 
 if __name__ == "__main__":

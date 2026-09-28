@@ -97,7 +97,7 @@ def create_dotted_globe(n_points=12000):
     return land_pts_3d, coastlines
 
 
-def custom_vmf_hac(X, k, gamma):
+def custom_hcl_hac(X, k, gamma):
     N = X.shape[0]
     clusters = {i: [i] for i in range(N)}
 
@@ -188,10 +188,10 @@ if __name__ == "__main__":
     ward = AgglomerativeClustering(n_clusters=K_CLUSTERS, linkage="ward")
     labels_ward = ward.fit_predict(X_earth)
 
-    labels_vmf = {}
+    labels_hcl = {}
     for g in gammas:
-        lbls = custom_vmf_hac(X_earth, K_CLUSTERS, g)
-        labels_vmf[g] = align_labels(labels_ward, lbls)
+        lbls = custom_hcl_hac(X_earth, K_CLUSTERS, g)
+        labels_hcl[g] = align_labels(labels_ward, lbls)
 
     views = [
         ("Europe \\& Africa", 35, 15),
@@ -318,7 +318,7 @@ if __name__ == "__main__":
         # ax.text2D(0.0, 0.5, view_name, transform=ax.transAxes, fontsize=16, rotation=90, va='center', ha='right', weight='bold')
 
         for i_g, g in enumerate(gammas):
-            labels_vmf_vis = labels_vmf[g][vis_data_mask]
+            labels_hcl_vis = labels_hcl[g][vis_data_mask]
 
             ax = fig.add_subplot(gs[i_v, i_g + 1], projection="3d")
             _expand(ax)
@@ -327,7 +327,7 @@ if __name__ == "__main__":
                 X_visible[:, 0],
                 X_visible[:, 1],
                 X_visible[:, 2],
-                color=cluster_colors[labels_vmf_vis],
+                color=cluster_colors[labels_hcl_vis],
                 s=10,
                 alpha=0.98,
                 edgecolors="white",

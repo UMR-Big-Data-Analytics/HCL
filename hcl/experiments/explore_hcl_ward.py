@@ -25,22 +25,22 @@ def run(
     split: int,
 ) -> dict[str, Any]:
     model = HclHAC(n_clusters=n_clusters, should_normalize=False, gamma=gamma).fit(x)
-    z_vmf = model.linkage_matrix_
-    vmf_labels = model.predict(x)
+    z_hcl = model.linkage_matrix_
+    hcl_labels = model.predict(x)
 
-    vmf_cop = cophenet(z_vmf)
-    pearson_corr = pearsonr(ward_cop, vmf_cop)[0]
-    spearman_corr = spearmanr(ward_cop, vmf_cop)[0]
+    hcl_cop = cophenet(z_hcl)
+    pearson_corr = pearsonr(ward_cop, hcl_cop)[0]
+    spearman_corr = spearmanr(ward_cop, hcl_cop)[0]
 
-    vmf_cluster_sizes = np.unique_counts(vmf_labels).counts
-    vmf_skew = skew(vmf_cluster_sizes)
+    hcl_cluster_sizes = np.unique_counts(hcl_labels).counts
+    hcl_skew = skew(hcl_cluster_sizes)
 
     return {
         "gamma": gamma,
         "pearson_corr": pearson_corr,
         "spearman_corr": spearman_corr,
         "ward_cluster_skew": ward_skew,
-        "vmf_cluster_skew": vmf_skew,
+        "hcl_cluster_skew": hcl_skew,
         "dataset_name": dataset_name,
         "split": split,
     }
@@ -83,7 +83,7 @@ def main():
     results = gather(jobs, show_progress=True)
     df = pd.DataFrame(results)
     os.makedirs(ROOT_DIR / "results" / "data", exist_ok=True)
-    df.to_csv(ROOT_DIR / "results" / "data" / "explore_vmf_ward.csv", index=False)
+    df.to_csv(ROOT_DIR / "results" / "data" / "explore_hcl_ward.csv", index=False)
 
 
 if __name__ == "__main__":

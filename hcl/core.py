@@ -28,7 +28,7 @@ class HclHAC(BaseEstimator, ClusterMixin):
         # float16 can result in numerical overflows when using numpy.linalg.norm with high dimensional data
         if X.dtype != np.float64:
             X = X.astype(np.float64)
-        self.linkage_matrix_ = vmf_hac(X, self.gamma, self.progressive, self.should_normalize)
+        self.linkage_matrix_ = hcl_hac(X, self.gamma, self.progressive, self.should_normalize)
         return self
 
     def fit_predict(self, X: np.ndarray, y=None, **kwargs) -> np.ndarray:
@@ -86,7 +86,7 @@ def _pair_costs(
     )
 
 
-def vmf_hac(
+def hcl_hac(
     X: np.ndarray,
     gamma: float | tuple[float, float],
     progressive: bool = False,

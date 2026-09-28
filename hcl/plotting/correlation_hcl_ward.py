@@ -25,7 +25,7 @@ def main():
         TextDatasets.WIKICITIES,
     ]
     dataset_names = [dataset.value.technical_name for dataset in datasets]
-    df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_vmf_ward.csv")
+    df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_hcl_ward.csv")
     df["dataset_name"] = df["dataset_name"].astype(str)
     df = df[df["dataset_name"].isin(dataset_names)]
     df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
@@ -81,7 +81,7 @@ def main():
     sns.lineplot(
         data=df_skew,
         x="gamma",
-        y="vmf_cluster_skew",
+        y="hcl_cluster_skew",
         hue="dataset_label",
         hue_order=labels,
         markers=marker_map,

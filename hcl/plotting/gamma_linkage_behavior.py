@@ -36,16 +36,16 @@ def linkage_trees():
         dataset_manager = DatasetManager("intfloat/multilingual-e5-large")
         dataset = dataset_manager.get(TextDatasets.DBPEDIA_14)
         k = np.unique(dataset.labels).shape[0]
-        vmf_small = HclHAC(n_clusters=k, gamma=0.01)
-        vmf_large = HclHAC(n_clusters=k, gamma=0.05)
-        vmf_progressive = HclHAC(n_clusters=k, gamma=(0.01, 0.075), progressive=True)
-        vmf_small.fit(dataset.embeddings)
-        vmf_large.fit(dataset.embeddings)
-        vmf_progressive.fit(dataset.embeddings)
+        hcl_small = HclHAC(n_clusters=k, gamma=0.01)
+        hcl_large = HclHAC(n_clusters=k, gamma=0.05)
+        hcl_progressive = HclHAC(n_clusters=k, gamma=(0.01, 0.075), progressive=True)
+        hcl_small.fit(dataset.embeddings)
+        hcl_large.fit(dataset.embeddings)
+        hcl_progressive.fit(dataset.embeddings)
 
-        linkage_small = vmf_small.linkage_matrix_
-        linkage_large = vmf_large.linkage_matrix_
-        linkage_progressive = vmf_progressive.linkage_matrix_
+        linkage_small = hcl_small.linkage_matrix_
+        linkage_large = hcl_large.linkage_matrix_
+        linkage_progressive = hcl_progressive.linkage_matrix_
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         with cache_path.open("wb") as cache_file:
             pickle.dump((linkage_small, linkage_large, linkage_progressive), cache_file)
@@ -104,7 +104,7 @@ def main():
         sns.lineplot(
             data=dataset_df,
             x="k",
-            y="ari_vmf",
+            y="ari_hcl",
             hue="gamma",
             hue_order=gamma_order,
             palette=gamma_palette,
@@ -112,10 +112,10 @@ def main():
             linewidth=0.9,
             ax=ax,
         )
-        max_val = dataset_df["ari_vmf"].max() * 1.05
+        max_val = dataset_df["ari_hcl"].max() * 1.05
 
-        df_vmf_prog = dataset_df[dataset_df["gamma"] == "(0.01, 0.075)"].drop_duplicates().sort_values("k")
-        ax.plot(df_vmf_prog["k"], df_vmf_prog["ari_vmf"], color=gamma_palette["(0.01, 0.075)"], linestyle="--")
+        df_hcl_prog = dataset_df[dataset_df["gamma"] == "(0.01, 0.075)"].drop_duplicates().sort_values("k")
+        ax.plot(df_hcl_prog["k"], df_hcl_prog["ari_hcl"], color=gamma_palette["(0.01, 0.075)"], linestyle="--")
         ax.axvline(float(n_true_clusters), color="red", linestyle=":", linewidth=0.9)
 
         ax.set_xscale("log")

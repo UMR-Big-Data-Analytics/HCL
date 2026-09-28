@@ -14,7 +14,7 @@ from hcl.utils.parallel import gather, task
 
 
 @task
-def compute_vmf_for_gamma(
+def compute_hcl_for_gamma(
     dataset_label: str, x: np.ndarray, gamma: float | tuple[float, float]
 ) -> tuple[str, float | tuple[float, float], HclHAC]:
     return dataset_label, gamma, HclHAC(-1, gamma=gamma, progressive=isinstance(gamma, tuple)).fit(x)
@@ -26,7 +26,7 @@ def compute_tree_trajectory(
     dataset_name: str,
     gammas: list[float | tuple[float, float]],
     max_k: int,
-    vmfs: dict[float | tuple[float, float], HclHAC],
+    hcls: dict[float | tuple[float, float], HclHAC],
 ) -> pd.DataFrame:
     x_norm = x / np.linalg.norm(x, axis=1, keepdims=True)
     z_ward = ward(pdist(x_norm))
@@ -38,13 +38,13 @@ def compute_tree_trajectory(
         ari_ward = adjusted_rand_score(y_true, labels_ward)
         v_measure_ward = v_measure_score(y_true, labels_ward)
         for gamma in gammas:
-            labels_vmf = vmfs[gamma].predict_cluster(k)
+            labels_hcl = hcls[gamma].predict_cluster(k)
             rows.append(
                 {
                     "gamma": gamma,
                     "k": k,
-                    "ari_vmf": adjusted_rand_score(y_true, labels_vmf),
-                    "v_measure_vmf": v_measure_score(y_true, labels_vmf),
+                    "ari_hcl": adjusted_rand_score(y_true, labels_hcl),
+                    "v_measure_hcl": v_measure_score(y_true, labels_hcl),
                     "ari_ward": ari_ward,
                     "v_measure_ward": v_measure_ward,
                     "dataset_name": dataset_name,
@@ -72,17 +72,17 @@ def main():
         # x, y = random_subset(dataset.embeddings, dataset.labels, n=1000, seed=42)
         dataset_data[dataset_label] = (x, y)
 
-    vmf_results = gather(
+    hcl_results = gather(
         [
-            compute_vmf_for_gamma(dataset_label, dataset_data[dataset_label][0], gamma)
+            compute_hcl_for_gamma(dataset_label, dataset_data[dataset_label][0], gamma)
             for _, dataset_label in datasets
             for gamma in gammas
         ],
         show_progress=True,
     )
-    vmfs_by_dataset: dict[str, dict[float, HclHAC]] = {dataset_label: {} for _, dataset_label in datasets}
-    for dataset_label, gamma, vmf_impl in vmf_results:
-        vmfs_by_dataset[dataset_label][gamma] = vmf_impl
+    hcls_by_dataset: dict[str, dict[float, HclHAC]] = {dataset_label: {} for _, dataset_label in datasets}
+    for dataset_label, gamma, hcl_impl in hcl_results:
+        hcls_by_dataset[dataset_label][gamma] = hcl_impl
 
     dfs = []
     for _, dataset_label in datasets:
@@ -95,7 +95,7 @@ def main():
                 dataset_name=dataset_label,
                 gammas=gammas,
                 max_k=max_k,
-                vmfs=vmfs_by_dataset[dataset_label],
+                hcls=hcls_by_dataset[dataset_label],
             )
         )
 
