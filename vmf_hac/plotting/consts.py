@@ -147,16 +147,24 @@ def categorical_palette(labels: Sequence[object]) -> dict[object, tuple[float, f
     return palette
 
 
-def figure_width_pt(columns: int = 1) -> float:
-    return COLUMN_WIDTH_PT * columns + COLUMN_SEP_PT * (columns - 1)
+def figure_width_pt(columns: int = 1, scale: float = 1.0) -> float:
+    r"""Figure width in pt.
+
+    *scale* is the fraction of the width used in LaTeX, e.g. ``0.7`` for
+    ``\includegraphics[width=0.7\linewidth]``. The figure is created at that physical
+    width so LaTeX includes it 1:1 and fonts and lines keep their nominal sizes.
+    """
+    if not 0 < scale <= 1:
+        raise ValueError(f"scale must be in (0, 1], got {scale}")
+    return (COLUMN_WIDTH_PT * columns + COLUMN_SEP_PT * (columns - 1)) * scale
 
 
-def figure_size(*, columns: int = 1, aspect: float = DEFAULT_FIGURE_ASPECT) -> fs.FigureScale:
-    return fs.FigureScale(units="pt", width=figure_width_pt(columns), aspect=aspect)
+def figure_size(*, columns: int = 1, aspect: float = DEFAULT_FIGURE_ASPECT, scale: float = 1.0) -> fs.FigureScale:
+    return fs.FigureScale(units="pt", width=figure_width_pt(columns, scale), aspect=aspect)
 
 
-def page_aspect_limit(columns: int = 1) -> float:
-    return TEXT_HEIGHT_PT / figure_width_pt(columns)
+def page_aspect_limit(columns: int = 1, scale: float = 1.0) -> float:
+    return TEXT_HEIGHT_PT / figure_width_pt(columns, scale)
 
 
 def latex_available() -> bool:

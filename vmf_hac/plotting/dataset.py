@@ -194,6 +194,10 @@ def _write_critical_difference_diagram(
         "alpha": 0.05,
         "adjustment": "holm",
         "reverse_x": True,
+        "axis_options": {
+            "every label/.style": "font=\\normalsize",
+        },
+        "tikzpicture_options": {"treatment label/.style": "font=\\normalsize"},
     }
     stem = f"datasets_{metric}_cd"
     diagram.to_file(ROOT_DIR / "results" / "tables" / f"{stem}.tex", **options)
@@ -261,6 +265,7 @@ def _write_2d_critical_difference_diagram(
             "legend style": "draw=none,fill=none,at={(0.25, -0.05)},anchor=north,row sep=0.4cm,/tikz/every even column/.append style={column sep=0.5cm}",
             "legend columns": "5",
         },
+        "tikzpicture_options": {"treatment label/.style": "font=\\normalsize"},
     }
     stem = f"datasets_{metric}_cd_2d"
     diagram.to_file(ROOT_DIR / "results" / "tables" / f"{stem}.tex", **options)

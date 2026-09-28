@@ -43,7 +43,7 @@ def main():
     marker_map = {lab: marker_cycle[i % len(marker_cycle)] for i, lab in enumerate(labels)}
     palette = {label: DATASET_PALETTE[label] for label in labels}
 
-    fig, ax = plt.subplots(figsize=figure_size(columns=1, aspect=0.8), layout="constrained")
+    fig, ax = plt.subplots(figsize=figure_size(columns=1, scale=0.8), layout="constrained")
 
     sns.lineplot(
         data=plot_df,
@@ -59,7 +59,7 @@ def main():
     )
 
     ax.set_xlabel(r"$\gamma$")
-    ax.set_ylabel("Cophenetic Correlation")
+    ax.set_ylabel("Correlation")
     handles, legend_labels = ax.get_legend_handles_labels()
     if ax.get_legend() is not None:
         ax.get_legend().remove()  # ty:ignore[unresolved-attribute]
@@ -74,7 +74,7 @@ def main():
 
     plt.close(fig)
 
-    fig, ax = plt.subplots(figsize=figure_size(columns=1, aspect=0.8), layout="constrained")
+    fig, ax = plt.subplots(figsize=figure_size(columns=1, scale=0.8), layout="constrained")
     df_skew = df.groupby(["dataset_label", "gamma"], as_index=False).mean(numeric_only=True)
     df_skew = df_skew[df_skew["gamma"] <= 0.1]
 
@@ -90,7 +90,7 @@ def main():
         ax=ax,
     )
     ax.set_xlabel(r"$\gamma$")
-    ax.set_ylabel("Cluster Skewness")
+    ax.set_ylabel("Skewness")
 
     handles, legend_labels = ax.get_legend_handles_labels()
     if ax.get_legend() is not None:

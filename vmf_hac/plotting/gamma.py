@@ -19,7 +19,9 @@ def main():
     df_mean = df[["gamma", "ari", "v_measure"]].groupby(["gamma"]).mean().sort_index()
     dataset_labels = sorted(df["dataset_label"].unique().tolist())
 
-    fig, axes = plt.subplots(2, 1, figsize=figure_size(columns=1, aspect=1.0), sharex=True, layout="constrained")
+    fig, axes = plt.subplots(
+        2, 1, figsize=figure_size(columns=1, aspect=1.0, scale=0.8), sharex=True, layout="constrained"
+    )
     for ax, metric, ylabel in zip(axes, ["ari", "v_measure"], ["ARI", "V-Measure"], strict=True):
         for dataset_label in dataset_labels:
             df_unique = df[df["dataset_label"] == dataset_label].sort_values("gamma")

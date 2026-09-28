@@ -21,6 +21,7 @@ def _square_panel_figsize(
     columns: int,
     decoration_in: float = 0.0,
     sidebar_in: float = 0.0,
+    scale: float = 1.0,
 ):
     """Starting figure size for a rows x cols grid of square panels spanning ``columns`` columns.
 
@@ -32,7 +33,7 @@ def _square_panel_figsize(
     width_in = figure_width_pt(columns) / PT_PER_INCH
     panel_in = (width_in - sidebar_in) / cols
     aspect = (rows * panel_in + decoration_in) / width_in
-    return figure_size(columns=columns, aspect=aspect)
+    return figure_size(columns=columns, aspect=aspect, scale=scale)
 
 
 def _fit_square_grid_height(fig, axes, *, tol_in: float = 0.001, iterations: int = 14) -> None:
@@ -98,7 +99,9 @@ def main():
     fig, axes = plt.subplots(
         len(R_bars_B),
         len(gammas),
-        figsize=_square_panel_figsize(len(R_bars_B), len(gammas), columns=2, decoration_in=1.6, sidebar_in=0.55),
+        figsize=_square_panel_figsize(
+            len(R_bars_B), len(gammas), columns=2, decoration_in=1.6, sidebar_in=0.55, scale=0.8
+        ),
         sharex=True,
         sharey=True,
         layout="constrained",
@@ -175,7 +178,9 @@ def main():
     fig, axes = plt.subplots(
         len(R_bars_B),
         len(N_Bs),
-        figsize=_square_panel_figsize(len(R_bars_B), len(N_Bs), columns=1, decoration_in=1.6, sidebar_in=0.45),
+        figsize=_square_panel_figsize(
+            len(R_bars_B), len(N_Bs), columns=1, decoration_in=1.6, sidebar_in=0.45, scale=0.8
+        ),
         sharex=True,
         sharey=True,
         layout="constrained",

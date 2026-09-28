@@ -11,6 +11,7 @@ from vmf_hac.definitions import ROOT_DIR
 from vmf_hac.plotting.consts import (
     CLUSTERER_LABELS,
     DATASET_ORDER,
+    DEFAULT_FIGURE_ASPECT,
     categorical_palette,
     clusterer_label_order,
     critdd_cycle_list,
@@ -85,8 +86,8 @@ def _plot_grid(df: pd.DataFrame, *, normalize: bool, filename: str) -> None:
     # datasets, so their curves cannot share a panel.
     cols = len(model_order)
     rows = len(dataset_order)
-    aspect = min(0.75 * rows / cols, page_aspect_limit(columns=2))
-    fig = plt.figure(figsize=figure_size(columns=2, aspect=aspect), layout="constrained")
+    aspect = min(0.8 * rows / cols, page_aspect_limit(columns=2))
+    fig = plt.figure(figsize=figure_size(columns=2, aspect=aspect, scale=0.8), layout="constrained")
     axes = np.atleast_2d(fig.subplots(rows, cols, sharex="row", sharey="row")).reshape(rows, cols)
 
     legend_handles: list = []
@@ -157,7 +158,7 @@ def embedding_models_over_k():
     _plot_grid(df, normalize=True, filename="embedding_models_normalized.pdf")
 
 
-def _model_tick_labels(df: pd.DataFrame, model_order: list[str]) -> list[str]:
+def _model_tick_labels(model_order: list[str]) -> list[str]:
     return [f"{label}" for label in model_order]
 
 
@@ -187,7 +188,7 @@ def _plot_level_and_order(df: pd.DataFrame) -> None:
     )
 
     fig = plt.figure(
-        figsize=figure_size(columns=2, aspect=min(0.42, page_aspect_limit(columns=2))),
+        figsize=figure_size(columns=2, aspect=DEFAULT_FIGURE_ASPECT * 0.5, scale=0.8),
         layout="constrained",
     )
     left, right = fig.subplots(1, 2)

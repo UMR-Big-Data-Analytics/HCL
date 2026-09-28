@@ -51,7 +51,7 @@ def linkage_trees():
             pickle.dump((linkage_small, linkage_large, linkage_progressive), cache_file)
 
     # plot the linkage tree
-    fig, axes = plt.subplots(1, 3, figsize=figure_size(columns=1, aspect=0.5))
+    fig, axes = plt.subplots(1, 3, figsize=figure_size(columns=1, aspect=0.5, scale=0.8), layout="constrained")
     for ax, gamma, linkage in zip(
         axes,
         [0.01, 0.05, (0.01, 0.075)],
@@ -71,9 +71,9 @@ def linkage_trees():
         for collection in ax.collections:
             collection.set_linewidth(0.2)
         if isinstance(gamma, tuple):
-            ax.set_title(r"$\gamma = 0.01 - 0.075$", fontsize=10)
+            ax.set_title(r"$\gamma = 0.01$--$0.075$")
         else:
-            ax.set_title(rf"$\gamma = {gamma}$", fontsize=10)
+            ax.set_title(rf"$\gamma = {gamma}$")
         # ax.text(
         #    0.98,
         #    0.98,
@@ -83,8 +83,7 @@ def linkage_trees():
         #    va="top",
         #   fontsize=10,
         # )
-        ax.set_xticklabels([])
-    fig.tight_layout()
+        ax.set_xticks([])
     save_figure(fig, ROOT_DIR / "results" / "plots" / "linkage_tree_dbpedia.pdf")
 
 
@@ -98,16 +97,15 @@ def main():
     gamma_palette = categorical_palette(gamma_order)
     gamma_order = [g for g in gamma_order if not str(g).startswith("(")]
 
-    # One panel per dataset stacked vertically: every curve gets the full column width,
-    # which matters because k spans three decades on a log axis.
     fig, axes = plt.subplots(
-        nrows=len(dataset_order),
-        ncols=1,
-        figsize=figure_size(columns=1, aspect=0.30 * len(dataset_order) + 0.25),
+        nrows=2,
+        ncols=2,
+        figsize=figure_size(columns=1),
         sharex=True,
         sharey=False,
         layout="constrained",
     )
+    axes = axes.ravel()
 
     for ax, dataset_label in zip(axes, dataset_order, strict=False):
         dataset_df = df[df["dataset_label"] == dataset_label].copy()
@@ -133,21 +131,19 @@ def main():
         ax.set_xlim(left=1, right=K_MAX)
         ax.set_ylim(bottom=0.0, top=max_val)
         ax.set_xlabel("")
-        ax.set_ylabel("ARI")
-        ax.xaxis.set_minor_locator(LogLocator(subs=(2, 5)))
+        ax.set_ylabel("")
+        ax.xaxis.set_major_locator(LogLocator(base=10, numticks=10))
+        ax.xaxis.set_minor_locator(LogLocator(subs=(2, 5), numticks=10))
         ax.xaxis.set_minor_formatter(NullFormatter())
-        # An in-panel label is more compact than a title and keeps the rows close together.
-        ax.text(
-            0.985,
-            0.93,
-            dataset_label,
-            transform=ax.transAxes,
-            ha="right",
-            va="top",
-        )
+        # Above the panel: at this width the curve peaks leave no free corner inside.
+        ax.set_title(dataset_label, pad=2)
 
-    axes[-1].set_xlabel("$k$")
-    # fig.supylabel("ARI")
+    for ax in axes[2:]:
+        ax.set_xlabel("$k$")
+    # Tick labels differ in width (0.25 vs 0.5), so pin the ARI labels to a common offset.
+    for ax in axes[::2]:
+        ax.set_ylabel("ARI")
+        ax.yaxis.set_label_coords(-0.22, 0.5)
 
     handles = [
         *(Line2D([0], [0], color=gamma_palette[gamma], label=f"$\\gamma = {gamma}$") for gamma in gamma_order),
@@ -156,7 +152,7 @@ def main():
             [0],
             color=gamma_palette["(0.01, 0.075)"],
             linestyle="--",
-            label=r"$\gamma = 0.01 - 0.075$",
+            label=r"$\gamma = 0.01$--$0.075$",
         ),
     ]
     fig.legend(handles=handles, loc="outside lower center", ncol=3, frameon=False)
