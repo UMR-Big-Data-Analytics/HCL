@@ -24,17 +24,10 @@ def _get_device():
 
 
 def _prepare_texts(model_name: str, texts: Sequence[str]) -> list[str]:
-    """
-    Prepare texts according to the embedding model.
-
-    This helper is intended for symmetric tasks such as clustering.
-    """
-
     # E5 models require the "passage:" prefix for document embeddings.
     if model_name.startswith("intfloat/multilingual-e5"):
         return [f"passage: {text}" for text in texts]
 
-    # All other models are used without prompts for clustering.
     return list(texts)
 
 
@@ -53,14 +46,6 @@ def _is_out_of_memory(exc: BaseException) -> bool:
 
 
 MAX_SEQ_LENGTH = 4096
-"""
-Upper bound on tokens per document.
-
-Some encoders advertise very long contexts (KaLM/Gemma 3 reports 131072 tokens). Without a cap the
-attention matrix of a single long document can require tens of GiB, which shrinking the batch size
-cannot recover from. Clustering does not benefit from such long contexts, so documents are
-truncated. Override with EMBED_MAX_SEQ_LENGTH.
-"""
 
 
 def _max_seq_length() -> int:
@@ -119,10 +104,6 @@ def _load_encoder(encoding_model: str) -> SentenceTransformer:
 
 
 def embed_texts(encoding_model: str, texts: Sequence[str]) -> np.ndarray:
-    """
-    Encode texts with automatic OOM recovery by shrinking batch size.
-    Optional env override: EMBED_BATCH_SIZE
-    """
     logger = logging.getLogger(__name__)
     prepared_texts = _prepare_texts(encoding_model, texts)
 
