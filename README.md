@@ -55,6 +55,12 @@ uv run generate-embeddings \
   --dataset mteb/arxiv-clustering-p2p
 ```
 
+Then generate the best hyperparameters for HDBSCAN:
+
+```bash
+uv run find-hdbscan-parameters
+```
+
 Run all experiments (will take a long time) or plotting suites:
 
 ```bash

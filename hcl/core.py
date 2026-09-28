@@ -41,10 +41,7 @@ class HclHAC(BaseEstimator, ClusterMixin):
         return self.labels_
 
     def predict_cluster(self, n_clusters: int) -> np.ndarray:
-        # vMF merge costs are not monotone (inversions, especially in progressive mode where the
-        # cost shrinks as gamma grows), so cutting by height with "maxclust" often cannot hit
-        # exactly n_clusters and neighbouring k collapse onto the same partition. Cutting by merge
-        # order instead (undo the last n_clusters - 1 merges) always yields exactly n_clusters.
+        # HLC produces inversions, especially in progressive mode -> need to extract clusters by merge order instead of height
         assert self.linkage_matrix_ is not None
         merge_order = self.linkage_matrix_.copy()
         merge_order[:, 2] = np.arange(merge_order.shape[0], dtype=np.float64)
@@ -52,7 +49,6 @@ class HclHAC(BaseEstimator, ClusterMixin):
 
 
 def _vmf_scores(N: np.ndarray, R: np.ndarray, gamma: float) -> np.ndarray:
-    # Vectorised vmf_score; R may exceed N by rounding errors, so clip before the log.
     return N * np.log(1.0 - np.minimum(R / N, 1.0) + gamma)
 
 
@@ -63,11 +59,6 @@ def _pair_costs(
     G: np.ndarray,
     gamma: float,
 ) -> np.ndarray:
-    """Linkage costs between the clusters in slots ``rows`` and ``cols``.
-
-    ``G`` is the Gram matrix of the cluster resultant vectors, i.e. ``G[a, b] = S_a . S_b``,
-    so ``||S_a + S_b||^2 = G[a, a] + G[b, b] + 2 G[a, b]``.
-    """
     # squared resultant lengths ||S_a||^2 of every slot (clip rounding noise below zero)
     sq_r = np.maximum(np.diag(G), 0.0)
     # R_A as a column and R_B as a row vector, so broadcasting yields a (rows x cols) grid
@@ -78,7 +69,7 @@ def _pair_costs(
 
     N_rows = N[rows][:, None]
     N_cols = N[cols][None, :]
-    # same formula as vmf_linkage: score(A u B) - score(A) - score(B), for all pairs at once
+    # score(A u B) - score(A) - score(B), for all pairs at once
     return (
         _vmf_scores(N_rows + N_cols, R_ab, gamma)
         - _vmf_scores(N_rows, R_rows, gamma)
@@ -92,14 +83,6 @@ def hcl_hac(
     progressive: bool = False,
     should_normalize=True,
 ):
-    """Agglomerative clustering with the vMF (or spherical Ward) linkage.
-
-    With ``progressive=True``, ``gamma`` is a ``(start, end)`` tuple and gamma is increased
-    linearly from ``start`` (first merge) to ``end`` (last merge). Since the linkage cost depends
-    on gamma, all pairwise costs among the active clusters are re-evaluated at the current gamma
-    before every merge, so that the merge decision never compares costs computed with different
-    gammas.
-    """
     n, _ = X.shape
     if should_normalize:
         X = normalize(X)
@@ -108,6 +91,7 @@ def hcl_hac(
     if progressive:
         if not isinstance(gamma, tuple) or len(gamma) != 2:
             raise ValueError("When progressive is True, gamma must be a tuple of (start, end) values.")
+        # gamma is increased linearly from gamma[0] (first merge) to gamma[1] (last merge)
         gammas = np.linspace(gamma[0], gamma[1], max(n - 1, 1))
     else:
         if isinstance(gamma, tuple):
@@ -115,9 +99,7 @@ def hcl_hac(
         gammas = np.full(max(n - 1, 1), float(gamma))
     recompute = progressive
 
-    # State is stored per "slot" (row index 0..n-1) instead of per cluster id. When two clusters
-    # merge, the result reuses the slot of one child and the other slot is deactivated, so all
-    # matrices stay n x n even though scipy's linkage format numbers clusters from 0 to 2n - 2.
+    # State is stored per "slot" (row index 0..n-1).
     # G[a, b] = S_a . S_b where S_a is the sum of the (unit) vectors in slot a. For singletons
     # this is just the cosine similarity matrix.
     G = X @ X.T
@@ -137,13 +119,12 @@ def hcl_hac(
     for merge_step in range(n - 1):
         active_slots = np.flatnonzero(active)
         if recompute and merge_step > 0:
-            # Progressive: gamma changed since the last step, so every cached cost is stale.
-            # Rescore all active pairs at the current gamma so the argmin compares like with like.
+            # Gamma changed since the last step, so every cached cost is stale.
             sub = _pair_costs(active_slots, active_slots, N, G, gammas[merge_step])
             np.fill_diagonal(sub, np.inf)
             cost_matrix[np.ix_(active_slots, active_slots)] = sub
         else:
-            # Fixed gamma: cached costs are still valid, only the merged row was updated below.
+            # cached costs are still valid, only the merged row was updated below.
             sub = cost_matrix[np.ix_(active_slots, active_slots)]
 
         # cheapest pair among active clusters; indices are local to sub, map them back to slots
@@ -156,29 +137,27 @@ def hcl_hac(
         N_ab = N[a] + N[b]
         linkage[merge_step] = [min(id_a, id_b), max(id_a, id_b), cost, N_ab]
 
-        # Merge b into slot a. Since S_ab = S_a + S_b, S_ab . S_k = G[a, k] + G[b, k], so the
-        # Gram row and column of a are updated by adding those of b. Doing the row first and
-        # then the column also yields the correct diagonal G[a, a] = ||S_a + S_b||^2.
+        # Merge b into slot a
         G[a, :] += G[b, :]
         G[:, a] += G[:, b]
         N[a] = N_ab
-        # the new cluster gets the next scipy id (n, n + 1, ...)
+        # compute new cluster id
         slot_ids[a] = n + merge_step
         # retire slot b so it is never picked again
         active[b] = False
         cost_matrix[b, :] = np.inf
         cost_matrix[:, b] = np.inf
 
-        # Fixed gamma: only costs involving the new cluster changed, so rescore just row/column a
-        # against all other active slots. (Progressive mode rescores everything next step.)
         others = np.flatnonzero(active & (all_slots != a))
         if not recompute and others.size:
+            # Fixed gamma: only costs involving the new cluster changed, so rescore just row/column a
+            # against all other active slots
             gamma_next = gammas[min(merge_step + 1, n - 2)]
             c = _pair_costs(np.array([a]), others, N, G, gamma_next)[0]
             cost_matrix[a, others] = c
             cost_matrix[others, a] = c
 
-    # Sometimes likelihood ratios yield tiny negative numbers. Fix them
+    # Sometimes likelihood ratios yield tiny negative numbers
     min_value = np.min(linkage[:, 2])
     if min_value < 0:
         linkage[:, 2] = linkage[:, 2] - min_value
