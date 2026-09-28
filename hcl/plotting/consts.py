@@ -220,3 +220,11 @@ def save_figure(fig: Figure, path: Path | str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     backend = "pgf" if plt.rcParams["text.usetex"] else None
     fig.savefig(path, backend=backend)
+
+
+MODEL_LABELS = {
+    "intfloat/multilingual-e5-large": "multi-e5-large",
+    "Qwen/Qwen3-Embedding-8B": "Qwen3-Emb-8B",
+    "codefuse-ai/F2LLM-v2-14B": "F2LLM-v2-14B",
+}
+HIGHLIGHT_CLUSTERER = CLUSTERER_LABELS["HclHAC"]

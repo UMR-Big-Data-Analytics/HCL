@@ -12,6 +12,7 @@ from hcl.plotting.consts import (
     CLUSTERER_LABELS,
     DATASET_ORDER,
     DEFAULT_FIGURE_ASPECT,
+    MODEL_LABELS,
     categorical_palette,
     clusterer_label_order,
     critdd_cycle_list,
@@ -23,14 +24,6 @@ from hcl.plotting.consts import (
     setup_publication_style,
 )
 from hcl.plotting.latex_table import style_top3_latex
-
-MODEL_LABELS = {
-    "intfloat/multilingual-e5-large": "multi-e5-large",
-    "Qwen/Qwen3-Embedding-8B": "Qwen3-Emb-8B",
-    "codefuse-ai/F2LLM-v2-14B": "F2LLM-v2-14B",
-}
-
-HIGHLIGHT_CLUSTERER = CLUSTERER_LABELS["HclHAC"]
 
 
 def _prepare_embedding_model_df() -> pd.DataFrame:

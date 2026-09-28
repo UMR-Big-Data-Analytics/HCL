@@ -9,7 +9,6 @@ from hcl.definitions import ROOT_DIR
 
 
 def lat_lon_to_cartesian(lat, lon, R=1.0):
-    """Converts arrays of Latitude and Longitude to 3D Cartesian Coordinates"""
     lat, lon = np.atleast_1d(lat), np.atleast_1d(lon)
     phi = (90 - lat) * np.pi / 180
     theta = lon * np.pi / 180
@@ -17,42 +16,32 @@ def lat_lon_to_cartesian(lat, lon, R=1.0):
 
 
 def get_camera_vec(elev, azim):
-    """Calculates the exact 3D vector of the Matplotlib camera"""
     elev_rad, azim_rad = np.deg2rad(elev), np.deg2rad(azim)
     return np.array([np.cos(elev_rad) * np.cos(azim_rad), np.cos(elev_rad) * np.sin(azim_rad), np.sin(elev_rad)])
 
 
 def mask_hidden_points(pts_3d, camera_vec, threshold=-0.05):
-    """Returns a boolean mask of points on the visible hemisphere"""
     return np.dot(pts_3d, camera_vec) > threshold
 
 
 def get_real_earth_population(n_samples=1500):
-    """Downloads real global city populations and samples points based on density"""
     print("Downloading real population data (Natural Earth 50m)...")
     url_cities = (
         "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_populated_places.geojson"
     )
     gdf_cities = gpd.read_file(url_cities)
 
-    # Filter valid populations
     cities = gdf_cities[["geometry", "POP_MAX"]].dropna()
     cities = cities[cities["POP_MAX"] > 0]
 
-    # Weight probabilities by population
     probs = cities["POP_MAX"] / cities["POP_MAX"].sum()  # noqa
 
     print(f"Sampling {n_samples} individuals weighted by global population...")
     sampled = cities.sample(n=n_samples, replace=True, random_state=42)
 
-    # lons = cities.geometry.x.to_numpy(copy=True)
-    # lats = cities.geometry.y.to_numpy(copy=True)
-
     lons = sampled.geometry.x.to_numpy(copy=True)
     lats = sampled.geometry.y.to_numpy(copy=True)
 
-    # Add slight Gaussian noise (~0.5 deg) so megalopolises don't collapse into a single mathematical point
-    # (vMF HAC requires gamma to handle perfectly identical points. Noise provides natural continuous variance).
     np.random.seed(42)
     lons += np.random.normal(0, 0.5, size=len(lons))
     lats += np.random.normal(0, 0.5, size=len(lats))
@@ -61,14 +50,7 @@ def get_real_earth_population(n_samples=1500):
     return lat_lon_to_cartesian(lats, lons, R=1.001)
 
 
-# ==========================================
-# 3. HIGH-RESOLUTION DOTTED GLOBE MAP
-# ==========================================
 def create_dotted_globe(n_points=12000):
-    """Generates a dense Fibonacci sphere and intersects it with real landmasses"""
-    print("Generating vector map layers...")
-
-    # 1. Fibonacci Sphere
     indices = np.arange(0, n_points, dtype=float) + 0.5
     phi = np.arccos(1 - 2 * indices / n_points)
     theta = np.pi * (1 + 5**0.5) * indices
@@ -85,17 +67,14 @@ def create_dotted_globe(n_points=12000):
     df = pd.DataFrame({"lat": lats, "lon": lons})
     gdf_pts = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.lon, df.lat), crs="EPSG:4326")  # ty:ignore
 
-    # 2. Intersect with Land
     url_land = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson"
     land = gpd.read_file(url_land)
 
-    print("Computing spatial join for map rendering...")
     pts_in_land = gpd.sjoin(gdf_pts, land, how="inner", predicate="intersects")
     land_mask = df.index.isin(pts_in_land.index)
 
     land_pts_3d = pts_3d[land_mask]
 
-    # 3. Densify Coastlines
     coastlines = []
     for geom in land.geometry:
         if geom is None:
@@ -206,17 +185,14 @@ if __name__ == "__main__":
     K_CLUSTERS = 28
     gammas = [0.01, 0.001]
 
-    print("Clustering Ward baseline...")
     ward = AgglomerativeClustering(n_clusters=K_CLUSTERS, linkage="ward")
     labels_ward = ward.fit_predict(X_earth)
 
     labels_vmf = {}
     for g in gammas:
-        print(f"Clustering vMF with gamma={g}...")
         lbls = custom_vmf_hac(X_earth, K_CLUSTERS, g)
         labels_vmf[g] = align_labels(labels_ward, lbls)
 
-    print("Rendering high-res visualization...")
     views = [
         ("Europe \\& Africa", 35, 15),
     ]
@@ -320,7 +296,6 @@ if __name__ == "__main__":
                     zorder=-1,
                 )
 
-        # ---- WARD PLOT ----
         ax = fig.add_subplot(gs[i_v, 0], projection="3d")
         _expand(ax)
         render_map_context(ax)
@@ -342,7 +317,6 @@ if __name__ == "__main__":
             ax.set_title("Ward", fontsize=16, pad=16)
         # ax.text2D(0.0, 0.5, view_name, transform=ax.transAxes, fontsize=16, rotation=90, va='center', ha='right', weight='bold')
 
-        # ---- vMF PLOTS ----
         for i_g, g in enumerate(gammas):
             labels_vmf_vis = labels_vmf[g][vis_data_mask]
 

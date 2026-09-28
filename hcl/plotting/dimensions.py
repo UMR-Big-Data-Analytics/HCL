@@ -48,10 +48,6 @@ def main():
     df = pd.read_csv(ROOT_DIR / "results" / "data" / "explore_dimensions.csv")
     df["dataset_label"] = df["dataset_name"].map(dataset_display_name)
     df["v_measure_effective"] = df["v_measure"] * (1 - df["noise_fraction"])
-    # Noise-inclusive metrics reassign noise to the closest cluster instead of discarding it.
-    # ami_nearest is the headline metric: unlike V-measure it is corrected for chance, so a
-    # clusterer that picks its own cluster count cannot inflate it by over-segmenting.
-    # Older result files predate these columns, so degrade gracefully.
     df = (
         df[
             [
@@ -146,15 +142,11 @@ def main():
     save_figure(fig, ROOT_DIR / "results" / "plots" / "dimensions.pdf")
 
     os.makedirs(ROOT_DIR / "results" / "tables", exist_ok=True)
-    for metric, filename in [
-        ("ami_nearest", "dimensions_ami_auc.tex"),
-        ("ari_nearest", "dimensions_ari_auc.tex"),
-        ("v_measure_nearest", "dimensions_v_measure_auc.tex"),
-        ("v_measure_effective", "dimensions_v_measure_effective_auc.tex"),
-    ]:
-        auc_table_latex = style_top3_latex(_compute_v_measure_auc_table(df, metric=metric))
-        with open(ROOT_DIR / "results" / "tables" / filename, "w", encoding="utf-8") as file:
-            file.write(auc_table_latex)
+    auc_table_latex = style_top3_latex(_compute_v_measure_auc_table(df, metric="v_measure_effective"))
+    with open(
+        ROOT_DIR / "results" / "tables" / "dimensions_v_measure_effective_auc.tex", "w", encoding="utf-8"
+    ) as file:
+        file.write(auc_table_latex)
 
 
 if __name__ == "__main__":

@@ -74,15 +74,6 @@ def linkage_trees():
             ax.set_title(r"$\gamma = 0.01$--$0.075$")
         else:
             ax.set_title(rf"$\gamma = {gamma}$")
-        # ax.text(
-        #    0.98,
-        #    0.98,
-        #    rf"$\gamma = {gamma}$",
-        #    transform=ax.transAxes,
-        #    ha="right",
-        #    va="top",
-        #   fontsize=10,
-        # )
         ax.set_xticks([])
     save_figure(fig, ROOT_DIR / "results" / "plots" / "linkage_tree_dbpedia.pdf")
 
@@ -135,12 +126,11 @@ def main():
         ax.xaxis.set_major_locator(LogLocator(base=10, numticks=10))
         ax.xaxis.set_minor_locator(LogLocator(subs=(2, 5), numticks=10))
         ax.xaxis.set_minor_formatter(NullFormatter())
-        # Above the panel: at this width the curve peaks leave no free corner inside.
         ax.set_title(dataset_label, pad=2)
 
     for ax in axes[2:]:
         ax.set_xlabel("$k$")
-    # Tick labels differ in width (0.25 vs 0.5), so pin the ARI labels to a common offset.
+    # Tick labels differ in width (0.25 vs 0.5)
     for ax in axes[::2]:
         ax.set_ylabel("ARI")
         ax.yaxis.set_label_coords(-0.22, 0.5)

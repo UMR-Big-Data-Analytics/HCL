@@ -17,6 +17,7 @@ PLOTTING_MODULES = [
     "hlc.plotting.gamma_linkage_behavior",
     "hlc.plotting.surface",
     "hlc.plotting.embedding_models",
+    "hlc.plotting.global_population",
 ]
 
 
