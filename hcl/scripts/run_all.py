@@ -1,23 +1,23 @@
 import subprocess
 
 EXPERIMENT_MODULES = [
-    "hlc.experiments.explore_datasets",
-    "hlc.experiments.explore_dimensions",
-    "hlc.experiments.explore_embedding_models",
-    "hlc.experiments.explore_gamma",
-    "hlc.experiments.explore_hcl_ward",
-    "hlc.experiments.explore_gamma_linkage_behavior",
+    "hcl.experiments.explore_datasets",
+    "hcl.experiments.explore_dimensions",
+    "hcl.experiments.explore_embedding_models",
+    "hcl.experiments.explore_gamma",
+    "hcl.experiments.explore_hcl_ward",
+    "hcl.experiments.explore_gamma_linkage_behavior",
 ]
 
 PLOTTING_MODULES = [
-    "hlc.plotting.dataset",
-    "hlc.plotting.gamma",
-    "hlc.plotting.dimensions",
-    "hlc.plotting.correlation_hcl_ward",
-    "hlc.plotting.gamma_linkage_behavior",
-    "hlc.plotting.surface",
-    "hlc.plotting.embedding_models",
-    "hlc.plotting.global_population",
+    "hcl.plotting.dataset",
+    "hcl.plotting.gamma",
+    "hcl.plotting.dimensions",
+    "hcl.plotting.correlation_hcl_ward",
+    "hcl.plotting.gamma_linkage_behavior",
+    "hcl.plotting.surface",
+    "hcl.plotting.embedding_models",
+    "hcl.plotting.global_population",
 ]
 
 
