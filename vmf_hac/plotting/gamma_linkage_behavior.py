@@ -1,4 +1,6 @@
 import os
+import pickle
+import sys
 
 import numpy as np
 import pandas as pd
@@ -25,23 +27,35 @@ K_MAX = 2500
 
 
 def linkage_trees():
-    dataset_manager = DatasetManager("intfloat/multilingual-e5-large")
-    dataset = dataset_manager.get(TextDatasets.DBPEDIA_14)
-    k = np.unique(dataset.labels).shape[0]
-    vmf_small = VmfHAC(n_clusters=k, gamma=0.01)
-    vmf_large = VmfHAC(n_clusters=k, gamma=0.05)
-    vmf_small.fit(dataset.embeddings)
-    vmf_large.fit(dataset.embeddings)
+    sys.setrecursionlimit(5000)
+    cache_path = ROOT_DIR / "results" / "data" / "linkage_trees_dbpedia.pkl"
+    if cache_path.exists():
+        with cache_path.open("rb") as cache_file:
+            linkage_small, linkage_large, linkage_progressive = pickle.load(cache_file)
+    else:
+        dataset_manager = DatasetManager("intfloat/multilingual-e5-large")
+        dataset = dataset_manager.get(TextDatasets.DBPEDIA_14)
+        k = np.unique(dataset.labels).shape[0]
+        vmf_small = VmfHAC(n_clusters=k, gamma=0.01)
+        vmf_large = VmfHAC(n_clusters=k, gamma=0.05)
+        vmf_progressive = VmfHAC(n_clusters=k, gamma=(0.01, 0.075), progressive=True)
+        vmf_small.fit(dataset.embeddings)
+        vmf_large.fit(dataset.embeddings)
+        vmf_progressive.fit(dataset.embeddings)
 
-    linkage_small = vmf_small.linkage_matrix_
-    linkage_large = vmf_large.linkage_matrix_
+        linkage_small = vmf_small.linkage_matrix_
+        linkage_large = vmf_large.linkage_matrix_
+        linkage_progressive = vmf_progressive.linkage_matrix_
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        with cache_path.open("wb") as cache_file:
+            pickle.dump((linkage_small, linkage_large, linkage_progressive), cache_file)
 
     # plot the linkage tree
-    _fig, axes = plt.subplots(1, 2, figsize=figure_size(columns=1))
+    fig, axes = plt.subplots(1, 3, figsize=figure_size(columns=1, aspect=0.5))
     for ax, gamma, linkage in zip(
         axes,
-        [0.01, 0.05],
-        [linkage_small, linkage_large],
+        [0.01, 0.05, (0.01, 0.075)],
+        [linkage_small, linkage_large, linkage_progressive],
         strict=False,
     ):
         assert linkage is not None
@@ -56,18 +70,22 @@ def linkage_trees():
         )
         for collection in ax.collections:
             collection.set_linewidth(0.2)
-        ax.text(
-            0.98,
-            0.98,
-            rf"$\gamma = {gamma}$",
-            transform=ax.transAxes,
-            ha="right",
-            va="top",
-            fontsize=10,
-        )
+        if isinstance(gamma, tuple):
+            ax.set_title(r"$\gamma = 0.01 - 0.075$", fontsize=10)
+        else:
+            ax.set_title(rf"$\gamma = {gamma}$", fontsize=10)
+        # ax.text(
+        #    0.98,
+        #    0.98,
+        #    rf"$\gamma = {gamma}$",
+        #    transform=ax.transAxes,
+        #    ha="right",
+        #    va="top",
+        #   fontsize=10,
+        # )
         ax.set_xticklabels([])
-    plt.tight_layout()
-    plt.savefig(ROOT_DIR / "results" / "plots" / "linkage_tree_dbpedia.pdf")
+    fig.tight_layout()
+    save_figure(fig, ROOT_DIR / "results" / "plots" / "linkage_tree_dbpedia.pdf")
 
 
 def main():
@@ -78,6 +96,7 @@ def main():
     dataset_order = [label for label in DATASET_ORDER if label in set(df["dataset_label"])]
     gamma_order = sorted(df["gamma"].unique().tolist())
     gamma_palette = categorical_palette(gamma_order)
+    gamma_order = [g for g in gamma_order if not str(g).startswith("(")]
 
     # One panel per dataset stacked vertically: every curve gets the full column width,
     # which matters because k spans three decades on a log axis.
@@ -106,8 +125,8 @@ def main():
         )
         max_val = dataset_df["ari_vmf"].max() * 1.05
 
-        # ward_df = dataset_df[["k", "ari_ward"]].drop_duplicates().sort_values("k")
-        # ax.plot(ward_df["k"], ward_df["ari_ward"], color="black", linestyle="--", linewidth=0.9)
+        df_vmf_prog = dataset_df[dataset_df["gamma"] == "(0.01, 0.075)"].drop_duplicates().sort_values("k")
+        ax.plot(df_vmf_prog["k"], df_vmf_prog["ari_vmf"], color=gamma_palette["(0.01, 0.075)"], linestyle="--")
         ax.axvline(float(n_true_clusters), color="red", linestyle=":", linewidth=0.9)
 
         ax.set_xscale("log")
@@ -131,8 +150,14 @@ def main():
     # fig.supylabel("ARI")
 
     handles = [
-        *(Line2D([0], [0], color=gamma_palette[gamma], label=f"$\\gamma = {gamma:g}$") for gamma in gamma_order),
-        Line2D([0], [0], color="black", linestyle="--", label="Ward"),
+        *(Line2D([0], [0], color=gamma_palette[gamma], label=f"$\\gamma = {gamma}$") for gamma in gamma_order),
+        Line2D(
+            [0],
+            [0],
+            color=gamma_palette["(0.01, 0.075)"],
+            linestyle="--",
+            label=r"$\gamma = 0.01 - 0.075$",
+        ),
     ]
     fig.legend(handles=handles, loc="outside lower center", ncol=3, frameon=False)
     save_figure(fig, ROOT_DIR / "results" / "plots" / "gamma_linkage_behavior.pdf")
@@ -141,4 +166,4 @@ def main():
 if __name__ == "__main__":
     setup_publication_style()
     linkage_trees()
-    # main()
+    main()

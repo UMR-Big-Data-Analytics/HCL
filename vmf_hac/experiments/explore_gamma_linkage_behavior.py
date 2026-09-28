@@ -14,17 +14,19 @@ from vmf_hac.utils.parallel import gather, task
 
 
 @task
-def compute_vmf_for_gamma(dataset_label: str, x: np.ndarray, gamma: float) -> tuple[str, float, VmfHAC]:
-    return dataset_label, gamma, VmfHAC(-1, gamma=gamma).fit(x)
+def compute_vmf_for_gamma(
+    dataset_label: str, x: np.ndarray, gamma: float | tuple[float, float]
+) -> tuple[str, float | tuple[float, float], VmfHAC]:
+    return dataset_label, gamma, VmfHAC(-1, gamma=gamma, progressive=isinstance(gamma, tuple)).fit(x)
 
 
 def compute_tree_trajectory(
     x: np.ndarray,
     y_true: np.ndarray,
     dataset_name: str,
-    gammas: list[float],
+    gammas: list[float | tuple[float, float]],
     max_k: int,
-    vmfs: dict[float, VmfHAC],
+    vmfs: dict[float | tuple[float, float], VmfHAC],
 ) -> pd.DataFrame:
     x_norm = x / np.linalg.norm(x, axis=1, keepdims=True)
     z_ward = ward(pdist(x_norm))
@@ -54,7 +56,7 @@ def compute_tree_trajectory(
 
 def main():
     model_name = "intfloat/multilingual-e5-large"
-    gammas = [0.01, 0.025, 0.05, 0.075, 0.1]
+    gammas = [0.01, 0.025, 0.05, 0.075, 0.1, (0.01, 0.075)]
     datasets = [
         (TextDatasets.DBPEDIA_14, "DBPedia"),
         (TextDatasets.BUILT_BENCH_CLUSTERING_P2P, "BuiltBenchP2P"),
