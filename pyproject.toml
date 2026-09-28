@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["vmf_hac*"]
+include = ["hcl*"]
 
 [project]
-name = "vmf-hac"
+name = "hcl"
 version = "0.1.0"
 requires-python = ">=3.14"
 dependencies = [
@@ -42,10 +42,10 @@ dependencies = [
 ]
 
 [project.scripts]
-generate-embeddings = "vmf_hac.scripts.generate_embeddings:main"
-submit-embedding-jobs = "vmf_hac.scripts.submit_embedding_jobs:main"
-run-all-experiments = "vmf_hac.scripts.run_all:run_all_experiments"
-run-all-plots = "vmf_hac.scripts.run_all:run_all_plots"
+generate-embeddings = "hcl.scripts.generate_embeddings:main"
+submit-embedding-jobs = "hcl.scripts.submit_embedding_jobs:main"
+run-all-experiments = "hcl.scripts.run_all:run_all_experiments"
+run-all-plots = "hcl.scripts.run_all:run_all_plots"
 
 [dependency-groups]
 dev = [
@@ -58,7 +58,7 @@ dev = [
 [tool.ruff]
 target-version = "py314"
 line-length = 120
-extend-exclude = ["vmf_hac/baselines/**", "notebooks/**"]
+extend-exclude = ["hcl/baselines/**", "notebooks/**"]
 
 [tool.ruff.lint]
 select = [
@@ -82,7 +82,7 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.ty.src]
-exclude = ["vmf_hac/baselines/**", "notebooks/**", "vmf_hac/experiments/**"]
+exclude = ["hcl/baselines/**", "notebooks/**", "hcl/experiments/**"]
 
 [tool.uv.sources]
 critdd = { git = "https://github.com/mirkobunse/critdd" }

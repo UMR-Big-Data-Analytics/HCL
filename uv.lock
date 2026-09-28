@@ -670,6 +670,89 @@ wheels = [
 ]
 
 [[package]]
+name = "hcl"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "accelerate" },
+    { name = "bitsandbytes" },
+    { name = "critdd" },
+    { name = "datasets" },
+    { name = "figure-scale" },
+    { name = "geopandas" },
+    { name = "ipykernel" },
+    { name = "joblib" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "optuna" },
+    { name = "pandas" },
+    { name = "pandas-stubs" },
+    { name = "pre-commit" },
+    { name = "psutil" },
+    { name = "pydantic" },
+    { name = "pyrefly" },
+    { name = "ruff" },
+    { name = "scienceplots" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "scipy-stubs" },
+    { name = "seaborn" },
+    { name = "sentence-transformers" },
+    { name = "shapely" },
+    { name = "tqdm" },
+    { name = "ty" },
+    { name = "umap-learn" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "ruff" },
+    { name = "ty" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "accelerate", specifier = ">=1.14.0" },
+    { name = "bitsandbytes", specifier = ">=0.49.2" },
+    { name = "critdd", git = "https://github.com/mirkobunse/critdd" },
+    { name = "datasets", specifier = ">=5.0.0" },
+    { name = "figure-scale", specifier = ">=0.1.0" },
+    { name = "geopandas", specifier = ">=1.1.4" },
+    { name = "ipykernel", specifier = ">=7.3.0" },
+    { name = "joblib", specifier = ">=1.5.3" },
+    { name = "matplotlib", specifier = ">=3.11.0" },
+    { name = "numpy", specifier = ">=2.5.1" },
+    { name = "optuna", specifier = ">=5.0.0" },
+    { name = "pandas", specifier = ">=3.0.3" },
+    { name = "pandas-stubs", specifier = ">=3.0.3.260530" },
+    { name = "pre-commit", specifier = ">=4.6.0" },
+    { name = "psutil", specifier = ">=7.2.2" },
+    { name = "pydantic", specifier = ">=2.13.4" },
+    { name = "pyrefly", specifier = ">=0.60.0" },
+    { name = "ruff", specifier = ">=0.15.20" },
+    { name = "scienceplots", specifier = ">=2.2.2" },
+    { name = "scikit-learn", specifier = ">=1.9.0" },
+    { name = "scipy", specifier = ">=1.18.0" },
+    { name = "scipy-stubs", specifier = ">=1.18.0.0" },
+    { name = "seaborn", specifier = ">=0.13.2" },
+    { name = "sentence-transformers", specifier = "==5.1.2" },
+    { name = "shapely", specifier = ">=2.1.2" },
+    { name = "tqdm", specifier = ">=4.68.3" },
+    { name = "ty", specifier = ">=0.0.56" },
+    { name = "umap-learn", specifier = ">=0.5.12" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pre-commit", specifier = ">=4.5.1" },
+    { name = "pytest", specifier = ">=9.0.3" },
+    { name = "ruff", specifier = ">=0.15.7" },
+    { name = "ty", specifier = ">=0.0.29" },
+]
+
+[[package]]
 name = "hf-xet"
 version = "1.5.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2500,89 +2583,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/74/65/ec1d92091671e6407d3e7c1f5801413bb7b2b57630a50cae7750456ba0ed/virtualenv-21.6.0.tar.gz", hash = "sha256:e18a4d750f2b64dea73e72ffde3922f3c52365fabdc8157ebd3da20d031c4734", size = 5526111, upload-time = "2026-07-06T22:49:56.972Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b8/e7/2fbd0cc1653c53eed8f10670538bb547de2b3e37aacad283faa82a71094b/virtualenv-21.6.0-py3-none-any.whl", hash = "sha256:bce9d097950fef9d81129b333babfb7767072850c2f1acce0ec536708401bfd1", size = 5506216, upload-time = "2026-07-06T22:49:54.941Z" },
-]
-
-[[package]]
-name = "vmf-hac"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "accelerate" },
-    { name = "bitsandbytes" },
-    { name = "critdd" },
-    { name = "datasets" },
-    { name = "figure-scale" },
-    { name = "geopandas" },
-    { name = "ipykernel" },
-    { name = "joblib" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "optuna" },
-    { name = "pandas" },
-    { name = "pandas-stubs" },
-    { name = "pre-commit" },
-    { name = "psutil" },
-    { name = "pydantic" },
-    { name = "pyrefly" },
-    { name = "ruff" },
-    { name = "scienceplots" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-    { name = "scipy-stubs" },
-    { name = "seaborn" },
-    { name = "sentence-transformers" },
-    { name = "shapely" },
-    { name = "tqdm" },
-    { name = "ty" },
-    { name = "umap-learn" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "ruff" },
-    { name = "ty" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "accelerate", specifier = ">=1.14.0" },
-    { name = "bitsandbytes", specifier = ">=0.49.2" },
-    { name = "critdd", git = "https://github.com/mirkobunse/critdd" },
-    { name = "datasets", specifier = ">=5.0.0" },
-    { name = "figure-scale", specifier = ">=0.1.0" },
-    { name = "geopandas", specifier = ">=1.1.4" },
-    { name = "ipykernel", specifier = ">=7.3.0" },
-    { name = "joblib", specifier = ">=1.5.3" },
-    { name = "matplotlib", specifier = ">=3.11.0" },
-    { name = "numpy", specifier = ">=2.5.1" },
-    { name = "optuna", specifier = ">=5.0.0" },
-    { name = "pandas", specifier = ">=3.0.3" },
-    { name = "pandas-stubs", specifier = ">=3.0.3.260530" },
-    { name = "pre-commit", specifier = ">=4.6.0" },
-    { name = "psutil", specifier = ">=7.2.2" },
-    { name = "pydantic", specifier = ">=2.13.4" },
-    { name = "pyrefly", specifier = ">=0.60.0" },
-    { name = "ruff", specifier = ">=0.15.20" },
-    { name = "scienceplots", specifier = ">=2.2.2" },
-    { name = "scikit-learn", specifier = ">=1.9.0" },
-    { name = "scipy", specifier = ">=1.18.0" },
-    { name = "scipy-stubs", specifier = ">=1.18.0.0" },
-    { name = "seaborn", specifier = ">=0.13.2" },
-    { name = "sentence-transformers", specifier = "==5.1.2" },
-    { name = "shapely", specifier = ">=2.1.2" },
-    { name = "tqdm", specifier = ">=4.68.3" },
-    { name = "ty", specifier = ">=0.0.56" },
-    { name = "umap-learn", specifier = ">=0.5.12" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pre-commit", specifier = ">=4.5.1" },
-    { name = "pytest", specifier = ">=9.0.3" },
-    { name = "ruff", specifier = ">=0.15.7" },
-    { name = "ty", specifier = ">=0.0.29" },
 ]
 
 [[package]]
