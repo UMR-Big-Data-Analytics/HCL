@@ -59,7 +59,7 @@ dev = [
 [tool.ruff]
 target-version = "py314"
 line-length = 120
-extend-exclude = ["hcl/baselines/**", "notebooks/**"]
+extend-exclude = ["hcl/baselines/**"]
 
 [tool.ruff.lint]
 select = [
@@ -83,7 +83,7 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.ty.src]
-exclude = ["hcl/baselines/**", "notebooks/**", "hcl/experiments/**"]
+exclude = ["hcl/baselines/**", "hcl/experiments/**"]
 
 [tool.uv.sources]
 critdd = { git = "https://github.com/mirkobunse/critdd" }
